@@ -37,6 +37,7 @@
 
 ## Orgalyst：类器官/器官芯片明场图像分析工具（工具前缀 mcp__orgalyst__，2026-09-15 起）
 - 用途：用户给一批明场类器官图片（目录或 glob），要计数、量大小/形态、比较分组、出报告时，优先用这些工具，不要自己写分割代码。
+- 标准流程见 skill `organoid-analysis`（用户提到类器官图片分析时自动适用，也可 /organoid-analysis 触发）：三个前提（器官、像素尺寸、目的）→ 选工具 → 核对返回 → 固定格式汇报。
 - `list_models`：看有哪些器官的专用分割模型（brain / intestine / pdac / colon；未知器官用 generic）。
 - `analyze_images(images, organ, pixel_size_um, name)`：分割 + 形态测量，返回 run_dir、总体与逐图汇总；产物在 run_dir 下（features.csv 每个类器官一行；report.html 可直接给用户；masks/、overlays/）。像素尺寸未知就不要编，留空则结果以像素为单位并在报告里注明。
 - `count_organoids(images, organ)`：只问“有几个”时用它——YOLO 检测计数，不分割，快；organ 取 intestine / brain / lung / generic，决定已标定的置信度阈值（肠 0.50、脑 0.45、肺 0.40、未知 0.45）。回答时说明这是检测计数，肠/肺每图误差约 20%（中位 13%），脑接近 0；要精确到每个类器官的大小形状仍用 analyze_images。
