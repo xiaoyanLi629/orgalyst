@@ -1,0 +1,5 @@
+{
+  "name": "bioagent",
+  "description": "BioAgent 内置的研究流程 skill：文献综述、调研报告、学术写作、引用管理",
+  "version": "0.1.0"
+}

@@ -1,0 +1,27 @@
+{
+  "args": {
+    "pretrained": "weights/cpsam_ft/pdac/pdac",
+    "organs": [
+      "pdac"
+    ],
+    "split": "test",
+    "limit": 0,
+    "diam_mode": "per_image_gt",
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "tag": "cpsamft_pdac_per_image_gt"
+  },
+  "summary": {
+    "pdac": {
+      "n_images": 20,
+      "ap50": 0.5908695459365845,
+      "ap75": 0.35606107115745544,
+      "ap90": 0.05350662022829056,
+      "precision50": 0.7638204097747803,
+      "recall50": 0.5732372403144836,
+      "f1_50": 0.6549460291862488,
+      "count_mape": 0.30053573685472534,
+      "sec_per_image": 1.5920059323310851
+    }
+  }
+}

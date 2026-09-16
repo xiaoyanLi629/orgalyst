@@ -1,0 +1,6 @@
+path: /root/autodl-tmp/AI4S_data/processed/det
+train: ['/root/autodl-tmp/AI4S_data/processed/det/intestine/train/images']
+val: ['/root/autodl-tmp/AI4S_data/processed/det/intestine/val/images']
+test: ['/root/autodl-tmp/AI4S_data/processed/det/intestine/test/images']
+names:
+  0: organoid

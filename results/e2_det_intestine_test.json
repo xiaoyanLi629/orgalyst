@@ -1,0 +1,32 @@
+{
+  "args": {
+    "organs": [
+      "intestine"
+    ],
+    "name": null,
+    "model": "/root/autodl-fs/AI4S/weights/yolo/yolo11m.pt",
+    "epochs": 100,
+    "imgsz": 1024,
+    "batch": 8,
+    "eval_only": false,
+    "seed": 0
+  },
+  "name": "intestine",
+  "organs": [
+    "intestine"
+  ],
+  "best": "/root/autodl-fs/AI4S/weights/yolo/intestine/weights/best.pt",
+  "minutes": 47.74466313123703,
+  "per_organ": {
+    "intestine": {
+      "map50": 0.9458581874066295,
+      "map50_95": 0.7371746495285199,
+      "precision": 0.8859549744746951,
+      "recall": 0.8952644852888216,
+      "count_mape": 0.29301371495298867,
+      "n_gt": 8443,
+      "n_pred": 9513,
+      "n_images": 423
+    }
+  }
+}

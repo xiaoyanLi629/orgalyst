@@ -1,0 +1,73 @@
+{
+ "single": {
+  "n": 64,
+  "n_all": 67,
+  "diam_median": 31.056059796505203
+ },
+ "intestine": {
+  "n": 201,
+  "n_all": 205,
+  "per_image": {
+   "0002_2013089_ckmbvhhhx0000345zlx7mhq1y_img": 64,
+   "0002_2423915_cknt06dr33pzv3b68t421bk27_img": 53,
+   "0002_7071445_ckm384kvx8ib3345zzs8qewl4_img": 51,
+   "0003_9960762_ckmdlvkmi14yv345z384v1grr_img": 33
+  },
+  "n_low_confidence": 3
+ },
+ "brain_um": {
+  "area_um2_median": 1068457.59854724,
+  "per_image": {
+   "org01_wt2D_d16_LabA": 1068457.59854724,
+   "org02_wt2D_d16_LabA": 1266938.80228528,
+   "org03_wt2D_d16_LabA": 908382.7430778
+  }
+ },
+ "lung": {
+  "per_image": {
+   "image_10 3": 14,
+   "image_10001": 19,
+   "image_10008": 16,
+   "image_10023": 11,
+   "image_10032": 21
+  },
+  "total": 81
+ },
+ "groups": {
+  "raw": {
+   "table": "     metric            test  statistic  ...  n_TH2-7  p_holm significant_0.05\n0  area_um2  Mann-Whitney U        1.0  ...        1     1.0            False\n\n[1 rows x 12 columns]",
+   "pairwise": null,
+   "figures": {},
+   "groups": [
+    "wt2D",
+    "TH2-7"
+   ],
+   "n_per_group": {
+    "wt2D": 3,
+    "TH2-7": 1
+   }
+  },
+  "median_by_group": {
+   "TH2-7": 1739111.55539296,
+   "wt2D": 1687435.73868736
+  },
+  "larger": "TH2-7"
+ },
+ "series": {
+  "first": {
+   "t": 2.0,
+   "v": 367889.7532326
+  },
+  "last": {
+   "t": 30.0,
+   "v": 1687435.73868736
+  },
+  "fold": 4.586797332244453,
+  "n_points": 10
+ },
+ "pdac": {
+  "n": 352,
+  "n_all": 374,
+  "n_generic_all": 525
+ }
+}

@@ -1,0 +1,13 @@
+model,organ,split,image,n_gt,n_pred,diam_est,ap50,ap75,ap90,tp50,fp50,fn50
+intestine,intestine,test,0002_2013089_ckmbvhhhx0000345zlx7mhq1y_img.png,70,70,0,0.97183096,0.8666667,0.27272728,69,1,1
+intestine,intestine,test,0002_2423915_cknt06dr33pzv3b68t421bk27_img.png,76,54,0,0.625,0.47727272,0.12068965,50,4,26
+intestine,intestine,test,0002_7071445_ckm384kvx8ib3345zzs8qewl4_img.png,44,57,0,0.7413793,0.68333334,0.16091955,43,14,1
+intestine,intestine,test,0003_9960762_ckmdlvkmi14yv345z384v1grr_img.png,36,32,0,0.8888889,0.7894737,0.51111114,32,0,4
+intestine,intestine,test,20210727_11562_ckufm1p2h4vzp0y7jh0fyg2yo_img.png,52,52,0,0.8909091,0.5522388,0.083333336,49,3,3
+intestine,intestine,test,20210727_11753_ckuf91aiz36dm0y9p2t9k5qoh_img.png,50,53,0,0.83928573,0.49275362,0.0,47,6,3
+intestine,intestine,test,20210727_12226_ckw3in2er4sqh10aofkm50w8l_img.png,149,157,0,0.74857146,0.56122446,0.10869565,131,26,18
+intestine,intestine,test,20210727_16063_ckw3j7wet8qan0zc39rca87mv_img.png,128,92,0,0.6296296,0.41025642,0.08374384,85,7,43
+intestine,intestine,test,20210727_18315_ckw3ky6ln8z8z0zbnfc0o1gam_img.png,75,95,0,0.65048546,0.58878505,0.51785713,67,28,8
+intestine,intestine,test,20210727_26838_ckw3ig3xg5ngk0zbp0g7j7dqt_img.png,59,64,0,0.8636364,0.44705883,0.0,57,7,2
+intestine,intestine,test,20210727_33832_ckw3n2vrs9btz0zbn3jqgbv4y_img.png,148,107,0,0.6666667,0.613924,0.275,102,5,46
+intestine,intestine,test,20210727_37653_ckwggbhda5ql20z7n9eveah6i_img.png,86,98,0,0.84,0.7196262,0.32374102,84,14,2

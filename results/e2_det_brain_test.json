@@ -1,0 +1,32 @@
+{
+  "args": {
+    "organs": [
+      "brain"
+    ],
+    "name": null,
+    "model": "/root/autodl-fs/AI4S/weights/yolo/yolo11m.pt",
+    "epochs": 100,
+    "imgsz": 1024,
+    "batch": 8,
+    "eval_only": false,
+    "seed": 0
+  },
+  "name": "brain",
+  "organs": [
+    "brain"
+  ],
+  "best": "/root/autodl-fs/AI4S/weights/yolo/brain/weights/best.pt",
+  "minutes": 31.789937166372933,
+  "per_organ": {
+    "brain": {
+      "map50": 0.995,
+      "map50_95": 0.9486977712359981,
+      "precision": 0.998503253981725,
+      "recall": 1.0,
+      "count_mape": 0.02142857142857143,
+      "n_gt": 280,
+      "n_pred": 286,
+      "n_images": 280
+    }
+  }
+}

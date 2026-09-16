@@ -1,0 +1,290 @@
+<title>Orgalyst 项目设计</title>
+<style>
+:root{
+  --paper:#F6F8F7; --ink:#1B262C; --muted:#5A6A70; --rule:#D3DAD7; --panel:#EDF1EF;
+  --accent:#0E7A6C; --accent-ink:#FFFFFF; --accent-soft:#D9EEE9;
+  --warn:#9A6A12; --warn-soft:#F5E9CF;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --serif:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
+  --sans:ui-sans-serif,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131A1D; --ink:#E3E9E6; --muted:#98A7AB; --rule:#2C3A3F; --panel:#1B2529;
+    --accent:#3FB59F; --accent-ink:#0B1A17; --accent-soft:#173430;
+    --warn:#D9A648; --warn-soft:#3A2E14;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131A1D; --ink:#E3E9E6; --muted:#98A7AB; --rule:#2C3A3F; --panel:#1B2529;
+  --accent:#3FB59F; --accent-ink:#0B1A17; --accent-soft:#173430;
+  --warn:#D9A648; --warn-soft:#3A2E14;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.75;padding-inline:16px;padding-block:0 64px}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}nav.toc{position:static;border:0;padding:0;margin-top:24px}}
+nav.toc{position:sticky;top:0;align-self:start;padding-top:40px;max-height:100vh;overflow:auto;font-size:13px;line-height:1.6}
+nav.toc .k{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+nav.toc a{display:block;color:var(--muted);text-decoration:none;padding:3px 0;border-left:2px solid transparent;padding-left:10px}
+nav.toc a:hover,nav.toc a:focus-visible{color:var(--ink);border-left-color:var(--accent);outline:none}
+main{max-width:76ch;padding-top:40px}
+header.hd{border-bottom:1px solid var(--rule);padding-bottom:24px;margin-bottom:36px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+h1{font-family:var(--serif);font-size:38px;line-height:1.2;margin:0 0 8px;text-wrap:balance;font-weight:700}
+.sub{color:var(--muted);font-size:16px;margin:0 0 20px}
+h2{font-family:var(--serif);font-size:24px;line-height:1.3;margin:52px 0 14px;text-wrap:balance;font-weight:600;padding-top:8px}
+h3{font-size:16.5px;margin:26px 0 8px;font-weight:700}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px;padding-left:1.4em}
+li{margin-bottom:6px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 24px;margin:0;font-size:14px}
+.meta div{display:grid;gap:2px}
+.meta dt{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.meta dd{margin:0;font-weight:500}
+.tw{overflow-x:auto;margin:12px 0 20px;border:1px solid var(--rule);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--rule)}
+th{background:var(--panel);font-weight:600;font-size:13px;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.n,th.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+code,.mono{font-family:var(--mono);font-size:.9em}
+code{background:var(--panel);padding:1px 5px;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.55;margin:10px 0 18px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 4px 4px 0;margin:16px 0 20px}
+.callout.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.callout p:last-child{margin-bottom:0}
+.tag{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:1px 7px;border-radius:3px;background:var(--panel);color:var(--muted);border:1px solid var(--rule);white-space:nowrap}
+.tag.p0{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tag.p1{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.arch{display:grid;gap:10px;margin:16px 0 24px;font-size:13.5px}
+.layer{display:grid;grid-template-columns:130px minmax(0,1fr);border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.layer .lab{background:var(--panel);padding:12px;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center}
+.layer .boxes{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px}
+.layer .box{border:1px solid var(--rule);border-radius:3px;padding:6px 10px;background:var(--paper)}
+.layer .box.hi{border-color:var(--accent);background:var(--accent-soft)}
+.layer.core{border-color:var(--accent)}
+.flow{text-align:center;color:var(--muted);font-family:var(--mono);font-size:12px;line-height:1}
+@media (max-width:600px){.layer{grid-template-columns:minmax(0,1fr)}.layer .lab{padding:8px 12px}}
+.week{display:grid;grid-template-columns:110px minmax(0,1fr);gap:0 18px;border-top:1px solid var(--rule);padding:14px 0}
+.week:last-child{border-bottom:1px solid var(--rule)}
+.week .d{font-family:var(--mono);font-size:12.5px;color:var(--muted);line-height:1.5;padding-top:3px}
+.week .d b{display:block;color:var(--ink);font-size:14px;font-family:var(--sans)}
+.week ul{margin:0}
+@media (max-width:600px){.week{grid-template-columns:minmax(0,1fr)}}
+.small{font-size:13px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--rule);margin:40px 0}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="目录">
+  <div class="k">目录</div>
+  <a href="#s0">0 这是什么</a>
+  <a href="#s1">1 定位与目标</a>
+  <a href="#s2">2 评分对齐</a>
+  <a href="#s3">3 系统架构</a>
+  <a href="#s4">4 模块清单</a>
+  <a href="#s5">5 数据与合规</a>
+  <a href="#s6">6 实验设计</a>
+  <a href="#s7">7 可复现性</a>
+  <a href="#s8">8 技术报告提纲</a>
+  <a href="#s9">9 演示视频分镜</a>
+  <a href="#s10">10 四周排期</a>
+  <a href="#s11">11 风险与对策</a>
+  <a href="#s12">12 已定事项</a>
+</nav>
+
+<main>
+<header class="hd">
+  <div class="eyebrow">AI4S Open Innovation · AI for Life Science · 项目设计文档 v0.3</div>
+  <h1>Orgalyst：面向类器官与器官芯片图像的分析 Copilot</h1>
+  <p class="sub">用自然语言驱动的端到端系统，把明场类器官图像变成可追溯的定量结论与报告。名称取 organoid 与 analyst 之合成，兼有 catalyst 之意。</p>
+  <dl class="meta">
+    <div><dt>提交类别</dt><dd>End-to-End System</dd></div>
+    <div><dt>初赛截止</dt><dd>2026-10-10（剩 25 天）</dd></div>
+    <div><dt>主数据集</dt><dd>OrgLine（Zenodo 16355179）</dd></div>
+    <div><dt>算力</dt><dd>AutoDL · RTX 5090 32 GB</dd></div>
+    <div><dt>项目目录</dt><dd class="mono">/root/autodl-fs/AI4S</dd></div>
+    <div><dt>文档日期</dt><dd>2026-09-15（v0.1 于 09-14）</dd></div>
+  </dl>
+</header>
+
+<h2 id="s0">0 这是什么：一个场景</h2>
+<p>一位生物学家在 96 孔板里培养脑类器官，一半孔加了候选药物，一半是对照组，第 5、10、15 天各在显微镜下拍一遍明场照片，几百张图，每张几十个类器官。她想知道加药组是不是长得更慢、形态是否变得不规则、差异在统计上是否成立。今天的做法是在 ImageJ 里逐个手工圈出类器官量面积，再导到表格里算，一整天耗在这上面，而且换个人圈结果就不一样。</p>
+<p>用 Orgalyst，她把图片文件夹拖进网页，输入一句"比较加药组和对照组在三个时间点的大小和形态差异，给我一份报告"。系统随后自动完成五步：用分割模型圈出每张图里的每个类器官；对每个类器官测量面积、直径、圆度等十几项指标；检查失焦的图和贴边的实例并标记为低可信；按组和时间点做统计检验、画生长曲线；生成一份网页报告，含图表、数值、方法学说明，末尾附上所用模型版本、参数和每张输入图的校验值。整个过程几分钟。她还能追问"第 15 天的差异是不是由几个特别大的类器官造成的"，系统会回到数据里回答。</p>
+<p>拆开看，项目由三部分组成。一是几个训练好的图像模型，负责在类器官照片里找到并圈出每个类器官，这是我们在 OrgLine 数据上训练和评测的部分，也是技术报告里实验结果的主体。二是一个分析工具包，负责测量、质控、统计和报告生成，全是确定性代码，不涉及大模型。三是一个对话式助手，在 bioagent 基础上改造，负责理解用户要求、按顺序调用前两部分、用人话解释结果。大模型只做第三部分，它不看图也不算数，所以结论不会被它编造。</p>
+<p>它不涉及湿实验，不需要新的显微镜或芯片硬件，也不是通用聊天机器人。它是实验拍完照之后那一段数据分析工作的自动化。比赛要交的是这套软件的代码仓库、模型权重、说明方法与效果的技术报告，以及五分钟的操作演示视频。</p>
+
+<h2 id="s1">1 定位与目标</h2>
+<p>器官芯片和类器官实验产出的主要数据是明场显微图像，但把图像变成"这一组类器官比对照组小了多少、形态是否异常、结论可不可信"这样的定量结论，目前仍依赖人工圈画或需要会写代码的分析人员。Orgalyst 要解决的就是这最后一公里：研究者用一句话提出问题，系统自动完成类器官检测与分割、形态定量、质量控制、组间比较和报告生成，并把每一步的模型版本、参数和中间结果留档，让结论可以追溯和复现。</p>
+<p>项目建立在两块已有工作之上。第一块是 bioagent，一个基于 Claude Agent SDK 的终端与网页版生物医学助理，已经具备会话管理、权限控制、长期记忆、工具按需加载和 223 个生信工具的 MCP 接入。第二块是类器官分割的技术选型与 cyto3 微调框架，之前在公司项目里做过零样本横评，框架代码可以直接复用，数据则全部换成公开的 OrgLine。本项目的新增工作集中在一个领域工具包 <code>orgatools</code>、对应的 MCP 服务器、面向 OrgLine 的模型训练与评测，以及把这些串成可演示的端到端流程。</p>
+<div class="callout"><p><strong>一句话价值主张。</strong>让不写代码的生物学家在五分钟内完成一次类器官形态学分析并拿到一份带证据链的报告，而不是等一周排队找分析人员。</p></div>
+
+<h2 id="s2">2 评分对齐</h2>
+<p>比赛的五个评分维度各自对应到本项目的一个具体落点，设计和排期都以此为准，避免把时间花在不计分的地方。</p>
+<div class="tw"><table>
+<tr><th>评分维度</th><th class="n">权重</th><th>本项目的落点</th><th>验证方式</th></tr>
+<tr><td>问题重要性与潜在影响</td><td class="n">30%</td><td>类器官/器官芯片实验的图像定量瓶颈；面向药筛与疾病建模的通用基础能力；可扩展到芯片上的时间序列监测</td><td>报告第 2 章的场景与需求论证；视频开头 40 秒</td></tr>
+<tr><td>技术方法与创新</td><td class="n">30%</td><td>领域专用工具 + Agent 编排 + 可追溯留档的组合；跨器官统一分割模型；不确定性与 QC 内建于流程</td><td>架构图、模块清单、消融实验 E1/E4</td></tr>
+<tr><td>结果与验证</td><td class="n">20%</td><td>在 OrgLine 五种器官上的分割/检测定量指标；形态学结果与数据集自带人工尺寸的一致性；Agent 任务集成功率</td><td>实验 E1–E5，与 OrgLine 论文基线对照</td></tr>
+<tr><td>可复现性与实现质量</td><td class="n">10%</td><td>一条不依赖任何 API Key 的命令行路径；Docker/conda 环境；权重托管在 Hugging Face；数据一键下载脚本</td><td>第 7 节；评审可按 README 在 30 分钟内跑通 demo</td></tr>
+<tr><td>展示质量</td><td class="n">10%</td><td>网页版录屏，真实数据、真实对话、真实报告</td><td>第 9 节分镜</td></tr>
+</table></div>
+<p>另外两条规则直接影响设计：代码必须在没有付费服务、专有硬件和非公开数据的情况下可复现，所以核心流水线必须能脱离大模型独立运行；队伍同时具备 AI 和生物背景可在"可解释性与可靠性"维度加 0.5 分，团队已邀请一位生物学同事入队，负责生物学表述审读与结果解读，报告中将声明团队构成。</p>
+
+<h2 id="s3">3 系统架构</h2>
+<p>系统分四层。最上面是交互层，复用 bioagent 的网页版和终端版；中间是编排层，由 Agent 根据用户意图调用工具并维护会话与留档；再下面是领域工具层，也就是本项目新写的 <code>orgatools</code>，通过 MCP 暴露给 Agent，同时提供独立命令行；最下面是模型与数据层。</p>
+<div class="arch">
+  <div class="layer"><div class="lab">交互层</div><div class="boxes"><div class="box">网页版（FastAPI + WebSocket，已上线）</div><div class="box">终端版 bioagent.sh</div><div class="box">文件上传 / 结果下载</div></div></div>
+  <div class="flow">▼</div>
+  <div class="layer"><div class="lab">编排层</div><div class="boxes"><div class="box">Agent SDK 会话（Claude，默认）</div><div class="box">LiteLLM 代理 → 本地开源模型（替代路径）</div><div class="box">权限与危险操作拦截</div><div class="box">会话留档 events.jsonl</div><div class="box">长期记忆 memory.md</div></div></div>
+  <div class="flow">▼ MCP（工具库前缀 mcp__orgatools__）</div>
+  <div class="layer core"><div class="lab">领域工具层</div><div class="boxes"><div class="box hi">detect · 检测与计数</div><div class="box hi">segment · 实例分割</div><div class="box hi">morphometry · 形态定量</div><div class="box hi">qc · 图像质量与不确定性</div><div class="box hi">track · 跨时间点追踪</div><div class="box hi">compare · 组间统计</div><div class="box hi">report · 报告生成</div><div class="box">dose · 剂量响应（可选）</div><div class="box">biotools · 文献/数据库（已有 223 个）</div></div></div>
+  <div class="flow">▼</div>
+  <div class="layer"><div class="lab">模型与数据</div><div class="boxes"><div class="box">Cellpose 微调权重（按器官 + 跨器官）</div><div class="box">YOLO11 检测权重</div><div class="box">OrgLine 数据（autodl-fs）</div><div class="box">用户上传图像</div><div class="box">分析产物：CSV / 掩码 / 图表 / HTML 报告</div></div></div>
+</div>
+<p>关键设计决定有三条。第一，<code>orgatools</code> 是一个普通 Python 包，先有命令行入口再包 MCP，这样评审不装 Agent 也能复现全部定量结果。第二，Agent 不做"看图"，所有图像理解都由领域模型完成，大模型只负责理解意图、选择工具、解释结果和写报告，这样结论不会被大模型幻觉污染，也便于换成开源模型。第三，每次分析生成一个带哈希的 run 目录，记录输入文件校验和、模型版本、参数和输出，报告末尾自动附上，这就是"可追溯"的具体实现。</p>
+
+<h2 id="s4">4 模块清单</h2>
+<p>优先级 P0 是提交的最低要求，P1 是拉开差距的部分，P2 是有余力再做。所有 P0 必须在第二周末跑通。</p>
+<div class="tw"><table>
+<tr><th>模块</th><th>功能</th><th>输入 → 输出</th><th>技术选型</th><th>来源</th><th>优先级</th></tr>
+<tr><td><code>segment</code></td><td>类器官实例分割</td><td>明场图 → 实例掩码、逐实例表</td><td>Cellpose cyto3 在 OrgLine InstanceSeg 上微调（此前在公司项目的零样本横评中 cyto3 优于 Cellpose-SAM、StarDist、OrganoID，据此选定）；按器官各一套专用权重（默认，按用户声明的器官类型选择）+ 一套跨器官权重（实验对照与未知器官兜底）</td><td>复用 cyto3 微调框架</td><td><span class="tag p0">P0</span></td></tr>
+<tr><td><code>detect</code></td><td>检测与计数</td><td>整孔图 → 检测框、计数、密度</td><td>YOLO11 在 OrgDet 三种器官上训练</td><td>新写</td><td><span class="tag p0">P0</span></td></tr>
+<tr><td><code>morphometry</code></td><td>形态学定量</td><td>掩码 → 面积、等效直径、周长、圆度、实心度、离心率、平均灰度、纹理特征</td><td>scikit-image regionprops + GLCM，像素尺寸可配置</td><td>新写</td><td><span class="tag p0">P0</span></td></tr>
+<tr><td><code>report</code></td><td>报告生成</td><td>run 目录 → HTML/PDF，含图表、方法学文字、参数与校验和</td><td>Jinja2 模板 + matplotlib，方法学段落由模板生成而非大模型</td><td>新写</td><td><span class="tag p0">P0</span></td></tr>
+<tr><td>MCP 服务器</td><td>把以上工具暴露给 Agent</td><td>JSON 参数 → 结果路径与摘要</td><td>FastMCP，沿用 bioagent 的 biotools 模式</td><td>复用模式</td><td><span class="tag p0">P0</span></td></tr>
+<tr><td><code>qc</code></td><td>图像质量与不确定性</td><td>图 → 失焦分数、光照不均、贴边实例标记；掩码 → TTA 一致性得分</td><td>拉普拉斯方差、背景拟合、翻转/旋转 TTA 的 IoU 一致性</td><td>新写</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td><code>compare</code></td><td>组间统计</td><td>两组或多组逐实例表 → 检验结果、效应量、图</td><td>Mann-Whitney / Kruskal，Cliff's delta，多重比较校正</td><td>新写</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td><code>track</code></td><td>跨时间点追踪</td><td>同一类器官的多日图像 → 生长曲线</td><td>按文件名元数据配对（脑类器官数据自带 org_id 与 day），不做像素级跟踪</td><td>新写</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td>开源模型替代路径</td><td>无 Anthropic Key 也能跑 Agent</td><td>—</td><td>LiteLLM 代理把 Anthropic 协议转到 vLLM 上的 Qwen3-32B（或 8B）</td><td>新配置</td><td><span class="tag p1">P1</span></td></tr>
+<tr><td><code>dose</code></td><td>剂量响应拟合</td><td>剂量 × 表型指标 → 4PL 曲线、IC50</td><td>scipy curve_fit，在 BBBC021 上验证</td><td>新写</td><td><span class="tag">P2</span></td></tr>
+</table></div>
+
+<h2 id="s5">5 数据与合规</h2>
+<p>主数据集 OrgLine 已下载、校验并解压在 <code>/root/autodl-fs/AI4S/data/OrgLine/</code>。它整合了八个公开类器官明场数据集并重新精修了标注，统一为 COCO/YOLO 格式，本项目不使用任何公司内部数据。</p>
+<div class="tw"><table>
+<tr><th>子集</th><th>器官</th><th class="n">图像数</th><th>标注</th><th>划分</th><th>本项目用途</th></tr>
+<tr><td rowspan="3">OrgDet</td><td>肠（Tellu / OrgaQuant / OrgaSegment）</td><td class="n">2813</td><td>YOLO 检测框</td><td>未划分</td><td rowspan="3">检测与计数（E2）；自行按图像 70/15/15 分层划分，固定随机种子，划分文件入库</td></tr>
+<tr><td>脑（Schröter 2024）</td><td class="n">1857</td><td>YOLO 检测框</td><td>未划分</td></tr>
+<tr><td>肺（DeepLUMEN）</td><td class="n">4006</td><td>YOLO 检测框</td><td>未划分</td></tr>
+<tr><td rowspan="4">InstanceSeg</td><td>脑</td><td class="n">1431 / 186 / 240</td><td>实例掩码（.npy）</td><td>train / val / test</td><td rowspan="4">实例分割（E1）、形态学（E3）；脑类器官文件名含 org_id、day、clone，可做生长追踪</td></tr>
+<tr><td>胰腺癌 PDAC（OrganoID / OrganoidNet）</td><td class="n">765 / 193 / 20</td><td>实例掩码</td><td>train / val / test</td></tr>
+<tr><td>肠（OrgaSegment，健康 vs 囊性纤维化）</td><td class="n">184 / 35 / 12</td><td>实例掩码</td><td>train / val / test</td></tr>
+<tr><td>结肠（OrgaExtractor）</td><td class="n">15 / 5 / 10</td><td>实例掩码（val 缺标注）</td><td>train / val / test</td></tr>
+</table></div>
+<p>补充数据有两项。脑类器官原始数据集（Zenodo 10301912，0.97 GB）自带每张图的人工测量尺寸和克隆、天数信息，用来验证我们自动形态学结果与人工测量的一致性，这是 E3 的核心证据。BBBC021（Broad，MCF7 细胞、113 种化合物、多剂量）只在 P2 的剂量响应模块做验证时使用。</p>
+<p>合规方面，OrgLine 精修标注为 CC-BY-4.0，原始图像遵循各自许可证，引用时须同时引用 OrgLine 与对应原始数据集，完整清单在项目目录的 <code>DATASET.md</code>。全部数据不含个人或临床受限信息。用户上传的图像只在 run 目录内处理，报告中会写明这一点。</p>
+
+<h2 id="s6">6 实验设计</h2>
+<p>五组实验对应评分里的"结果与验证"和"技术创新"，E1 到 E3 是报告的主体，E4 和 E5 是差异化。所有实验的配置文件和结果表都进仓库。</p>
+<h3>E1 实例分割（P0）</h3>
+<p>在 InstanceSeg 四种器官的官方划分上评测。指标为掩码 AP50、AP50:95、IoU 0.5 下的 F1，以及每图计数误差。对比的模型有：cyto3 零样本，cpsam 零样本，cyto3 按器官微调，cyto3 跨器官联合微调，YOLO11-seg。额外做一组留一器官（leave-one-organ-out）实验来回答"跨器官模型能否泛化到没见过的器官"，这是审稿人和评委都会问的问题。OrgLine 论文报告的数值作为外部参照写进表格。</p>
+<h3>E2 检测与计数（P0）</h3>
+<p>在 OrgDet 三种器官上训练 YOLO11，报告 mAP50、mAP50:95 和计数的 MAE 与 MAPE，按器官分别给出。同时比较"按器官单独训练"与"三器官联合训练"。</p>
+<h3>E3 形态学与人工测量的一致性（P0）</h3>
+<p>用脑类器官原始数据集自带的人工尺寸作为参照，计算自动测量与人工测量的 Pearson/Spearman 相关、Bland-Altman 一致性界限，并按四个克隆分别画出 5 到 30 天的生长曲线，检验健康克隆与疾病克隆的差异是否能被自动流程复现。肠类器官则比较健康与囊性纤维化两组的圆度和面积分布，对应 OrgaSegment 论文里的肿胀实验。</p>
+<h3>E4 质量控制与不确定性（P1）</h3>
+<p>验证 QC 分数的有用性：失焦分数与分割误差的相关性；TTA 一致性得分能否把错误分割的实例排在前面（以 AUROC 报告）。再做一个消融，说明在报告中标出低置信实例后，人工复核的工作量下降多少。</p>
+<h3>E5 Agent 端到端任务集（P1）</h3>
+<p>设计 12 个自然语言任务，覆盖单图分析、批量分析、组间比较、生长曲线、生成报告和追问解释，每个任务定义可自动判定的成功标准（比如输出文件存在且数值在容差内）。报告成功率、平均工具调用次数、平均耗时，并分别在 Claude 与本地开源模型两个后端上跑，如实给出差距。</p>
+<h3>E6 剂量响应（P2，视时间）</h3>
+<p>在 BBBC021 上以形态学指标拟合 4PL 曲线，与已知作用机制标签做一致性检查。若第三周仍未开始，直接放弃并在报告的"局限与未来工作"里说明。</p>
+
+<h2 id="s7">7 可复现性方案</h2>
+<p>评审要在没有付费服务的前提下复现。因此仓库提供两条路径：命令行路径不需要任何大模型，能复现报告里的全部数值；Agent 路径默认用 Claude，同时给出本地开源模型的配置。</p>
+<pre>orgalyst/
+├── README.md                 30 分钟上手：环境、下载数据、跑 demo、复现表格
+├── environment.yml / Dockerfile
+├── orgatools/                领域工具包（detect / segment / morphometry / qc / track / compare / report）
+├── mcp_server.py             把 orgatools 暴露为 MCP
+├── agent/                    bioagent 精简版：会话、权限、留档、网页版
+├── configs/                  训练与评测配置，含数据划分文件
+├── scripts/
+│   ├── download_data.sh      OrgLine + 脑类器官原始集，含 MD5
+│   ├── train_*.py / evaluate_*.py
+│   ├── demo.py               单条命令从图像到报告
+│   └── run_agent_tasks.py    E5 任务集
+├── weights/README.md         权重从 Hugging Face（XiaoyanLi/orgalyst-*）下载
+└── results/                  所有表格的 CSV 与生成脚本</pre>
+<p>权重托管在 Hugging Face 的 XiaoyanLi 账号下，下载脚本带校验和。Docker 镜像基于 CUDA 12 的 PyTorch 官方镜像，CPU 也能跑推理只是慢一些，这一点写进 README。技术报告里单列一节"外部服务与替代方案"，说明 Anthropic API 的用途、费用量级和不使用时的两种替代。</p>
+
+<h2 id="s8">8 技术报告提纲</h2>
+<p>目标 16 到 18 页正文，Kaggle Writeup 里放摘要和链接，全文以 PDF 链接提供。</p>
+<ol>
+<li>标题、团队与摘要（1 页）。含类别声明、团队成员与学科背景声明。</li>
+<li>问题定义与应用场景（1.5 页）。类器官/器官芯片图像分析的现状与瓶颈，目标用户，成功标准。</li>
+<li>数据（1.5 页）。OrgLine 与补充数据集的来源、许可证、划分与预处理，合规声明。</li>
+<li>方法与系统（4 页）。总体架构，领域工具各模块的算法，Agent 编排与留档机制，开源模型替代路径。</li>
+<li>实现细节（1.5 页）。训练配置、硬件、耗时，MCP 接口定义。</li>
+<li>实验与结果（4 页）。E1 到 E5 的表格与图，含消融和外部基线对照。</li>
+<li>可靠性分析与局限（1.5 页）。失败案例，跨器官泛化边界，大模型相关风险，数据局限。</li>
+<li>影响与未来工作（1 页）。器官芯片时间序列、剂量响应、与实验自动化对接。</li>
+<li>复现指南（1 页）。命令清单与预期耗时。</li>
+<li>外部资源与许可证清单（0.5 页）。模型、库、数据集、AI 工具。</li>
+</ol>
+
+<h2 id="s9">9 演示视频分镜</h2>
+<p>总长控制在 4 分 30 秒，留 30 秒余量。全部在网页版真实录屏，不用幻灯片堆文字。</p>
+<div class="tw"><table>
+<tr><th class="n">时间</th><th>画面</th><th>旁白要点</th></tr>
+<tr><td class="n">0:00–0:40</td><td>一张真实的类器官整孔明场图，叠加人工圈画的动画</td><td>问题：一个孔几百个类器官，人工量化一天，且因人而异；器官芯片让数据量再上一个量级</td></tr>
+<tr><td class="n">0:40–1:10</td><td>架构图逐层点亮</td><td>方案：领域模型看图，Agent 编排，每一步留档</td></tr>
+<tr><td class="n">1:10–2:40</td><td>网页版实操：上传两组脑类器官图，输入"比较健康与疾病克隆第 15 天的大小差异并出报告"，展示工具调用过程、分割结果叠加、统计图、生成的报告</td><td>核心演示：从问题到报告一分半，报告末尾的证据链</td></tr>
+<tr><td class="n">2:40–3:20</td><td>追问"哪些结果不可靠"，系统列出低置信实例并高亮</td><td>可靠性：QC 与不确定性内建</td></tr>
+<tr><td class="n">3:20–4:00</td><td>结果表格：E1/E2 指标、与人工测量的一致性图</td><td>验证：五种器官、公开基准、与人工测量一致</td></tr>
+<tr><td class="n">4:00–4:30</td><td>仓库 README、一条命令跑 demo、Hugging Face 权重页</td><td>可复现与未来：器官芯片时间序列、剂量响应</td></tr>
+</table></div>
+
+<h2 id="s10">10 四周排期</h2>
+<p>从 9 月 14 日到 10 月 10 日共 26 天。10 月 8 日为内部提交日，留两天处理 Kaggle Writeup 格式和视频上传的意外。</p>
+<div class="week"><div class="d"><b>第一周</b>09-14 → 09-20</div><ul>
+<li>数据加载器与 OrgDet 划分文件；E1 零样本基线（cyto3、cpsam）跑出第一张表。</li>
+<li><code>orgatools</code> 包骨架，segment / morphometry 两个模块可用；MCP 服务器接入 bioagent 并能在网页版调用。</li>
+<li>启动 Cellpose 按器官微调与 YOLO11 检测训练（后台跑）。</li>
+<li>填写比赛报名表；确定队友与项目名。</li>
+</ul></div>
+<div class="week"><div class="d"><b>第二周</b>09-21 → 09-27</div><ul>
+<li>完成 E1、E2 全部对比与留一器官实验；跨器官联合模型。</li>
+<li>detect / report 模块；run 目录留档机制；报告模板定稿。</li>
+<li>下载脑类器官原始集，完成 E3 一致性分析与生长曲线。</li>
+<li>里程碑：P0 全部跑通，能从一张图端到端出报告。</li>
+</ul></div>
+<div class="week"><div class="d"><b>第三周</b>09-28 → 10-04</div><ul>
+<li>qc / compare / track 模块；E4 与 E5 实验；LiteLLM + vLLM 开源模型路径。</li>
+<li>仓库整理：README、Dockerfile、下载脚本、权重上传 Hugging Face、demo.py 在干净环境验证。</li>
+<li>技术报告初稿（第 1 到 6 章）。</li>
+</ul></div>
+<div class="week"><div class="d"><b>第四周</b>10-05 → 10-10</div><ul>
+<li>10-05/06：录制并剪辑视频；报告第 7 到 10 章，全文校读。</li>
+<li>10-07：请队友按 README 从零复现一次，修 bug。</li>
+<li>10-08：提交 Kaggle Writeup（内部截止）。10-09/10 只处理意外。</li>
+</ul></div>
+
+<h2 id="s11">11 风险与对策</h2>
+<div class="tw"><table>
+<tr><th>风险</th><th>影响</th><th>对策</th></tr>
+<tr><td>微调效果不及 OrgLine 论文基线</td><td>E1 表格不好看</td><td>如实报告并解释差异（OrgLine 用检测器引导的 SAM，我们用 Cellpose）；把重点放在系统整体而非单点 SOTA；第二周末若差距过大，改用 YOLO11-seg 作主模型</td></tr>
+<tr><td>Agent 后端依赖 Anthropic API 被评审视为不可复现</td><td>可复现性扣分</td><td>命令行路径覆盖全部数值；开源模型路径可跑通 E5 至少一半任务；报告单列说明</td></tr>
+<tr><td>autodl-fs 小文件读取慢拖累训练</td><td>训练时间翻倍</td><td>训练前把 data/OrgLine 临时复制到 /root/autodl-tmp，用完删除；README 已写明</td></tr>
+<tr><td>AutoDL 实例被释放或网络代理不稳</td><td>环境丢失</td><td>环境按 envs_local.sh 备份到 autodl-fs；所有脚本幂等可重跑；代理健康检查已有重试</td></tr>
+<tr><td>时间不够，P1 做不完</td><td>差异化不足</td><td>P0 在第二周末必须完成；P1 按 qc → compare → track → 开源路径的顺序做，做到哪算哪；P2 默认放弃</td></tr>
+<tr><td>视频超时或链接不可公开访问</td><td>不予评审</td><td>4 分 30 秒定稿；同时传 YouTube 与 Bilibili；提交前用无痕窗口验证</td></tr>
+</table></div>
+
+<h2 id="s12">12 已定事项与默认取舍</h2>
+<p>以下决定已经做出，后续按此执行；最后两项是默认取舍，若中途改变主意在第二周末前告知即可。</p>
+<ol>
+<li><strong>项目名 Orgalyst。</strong>organoid 与 analyst 的合成词，读作 or-ga-lyst，GitHub 与 PyPI 均无同名项目。仓库名 <code>orgalyst</code>，Python 包名 <code>orgalyst</code>（领域工具子包 <code>orgalyst.tools</code>），Hugging Face 权重前缀 <code>XiaoyanLi/orgalyst-</code>。</li>
+<li><strong>团队。</strong>已邀请一位生物学同事入队，团队构成为 AI 加生物学，报告中声明以获得学科交叉加分。</li>
+<li><strong>分割主模型 Cellpose cyto3 微调。</strong>依据是此前零样本横评的结果，并且微调框架已有。YOLO11-seg 仅作为 E1 的对比基线，不作主模型。</li>
+<li><strong>默认使用按器官的专用权重。</strong>即使 E1 显示跨器官通用模型与专用模型差距不大，系统仍默认按用户声明的器官类型加载对应的专用权重；跨器官模型只用于实验对照，以及用户处理五种器官之外的新类型时的兜底。器官类型来自实验设计表，不由模型从图像猜测。</li>
+<li><strong>开源模型替代路径保持 P1。</strong>可复现性的硬要求由无大模型的命令行路径满足，开源模型路径是加分项，排在 qc 与 compare 之后。</li>
+<li><strong>BBBC021 剂量响应保持 P2。</strong>默认不做，报告中写入未来工作。</li>
+</ol>
+<hr>
+<p class="small">文档存于 /root/autodl-fs/AI4S/docs/design.html（v0.3，2026-09-15）。比赛页面、数据集来源与许可证见项目 README 与 DATASET.md。</p>
+</main>
+</div>

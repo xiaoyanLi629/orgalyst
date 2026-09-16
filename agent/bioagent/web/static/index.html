@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BioAgent</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AC%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/vendor/marked.min.js"></script>
+<script src="/static/vendor/purify.min.js"></script>
+</head>
+<body>
+<!-- 登录 -->
+<section id="view-login" class="view">
+  <form id="login-form" class="card">
+    <h1>BioAgent</h1>
+    <label>用户名 <input name="name" autocomplete="username" required></label>
+    <label>密码 <input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit">登录</button>
+    <p id="login-error" class="error" hidden></p>
+  </form>
+</section>
+
+<!-- 对话主界面 -->
+<section id="view-chat" class="view" hidden>
+  <header class="topbar">
+    <button id="btn-toggle-left" class="icon" title="对话列表">☰</button>
+    <span class="brand">BioAgent</span>
+    <span id="chat-title" class="title"></span>
+    <span class="spacer"></span>
+    <label id="perm-wrap" title="本对话的确认方式，随时可改">确认 <select id="perm-mode"><option value="readonly">只读文件</option><option value="ask">每步确认</option><option value="edits">确认命令</option><option value="auto">自动允许</option></select></label>
+    <button id="btn-modules" class="icon" title="工具模块（按需加载）">🧩</button>
+    <button id="btn-toggle-right" class="icon" title="文件">📁</button>
+    <button id="btn-settings" class="icon" title="设置">⚙</button>
+    <button id="btn-admin" class="icon" title="管理后台" hidden>🛠</button>
+    <button id="btn-logout" class="icon" title="退出">⏻</button>
+  </header>
+  <div class="layout">
+    <aside id="left" class="pane">
+      <button id="btn-new-chat" class="primary wide">＋ 新对话</button>
+      <ul id="chat-list"></ul>
+    </aside>
+    <div class="splitter" id="split-left" title="拖动调整左栏宽度"></div>
+    <main id="center">
+      <div id="messages"></div>
+      <div id="working" hidden><span class="dot"></span><span id="working-text"></span></div>
+      <div id="status-bar">
+        <span id="ctx-bar"></span><span id="limit-text"></span><span id="modules-text" title="本对话加载的工具模块，点右上角 🧩 调整"></span>
+      </div>
+      <form id="prompt-form">
+        <div id="prompt-wrap"><div id="prompt-grip" title="向上拖动放大输入框">⋯</div><textarea id="prompt" rows="4" placeholder="输入任务，Enter 发送，Shift+Enter 换行"></textarea></div>
+        <button id="btn-send" type="submit" class="primary">发送</button>
+        <button id="btn-stop" type="button" hidden>停止</button>
+      </form>
+    </main>
+    <div class="splitter" id="split-right" title="拖动调整右栏宽度"></div>
+    <aside id="right" class="pane">
+      <div id="todo-box" hidden><div class="box-title">任务清单</div><ul id="todo-list"></ul></div>
+      <div class="tabs">
+        <button data-scope="files" class="tab active">我的数据</button>
+        <button data-scope="chat" class="tab">本次对话产物</button>
+      </div>
+      <div class="file-toolbar">
+        <button id="btn-upload" class="small">上传</button>
+        <button id="btn-mkdir" class="small">新建文件夹</button>
+        <button id="btn-zip" class="small">打包下载</button>
+        <input id="file-input" type="file" multiple hidden>
+      </div>
+      <div id="file-path" class="crumbs"></div>
+      <ul id="file-list"></ul>
+      <div id="upload-progress"></div>
+    </aside>
+  </div>
+  <div id="modules-panel" class="popover" hidden>
+    <div class="popover-head"><b>本对话加载的工具模块</b><span class="spacer"></span><button id="btn-modules-close" class="icon">✕</button></div>
+    <p class="hint">只加载需要的模块，每轮更快更省。切换后自动重新接入，对话不中断。</p>
+    <div id="modules-list"></div>
+    <div class="popover-foot"><button id="btn-modules-default" class="small">恢复默认</button><button id="btn-modules-all" class="small">全选</button><span class="spacer"></span><button id="btn-modules-apply" class="primary">应用</button></div>
+    <p id="modules-msg" class="msg"></p>
+  </div>
+  <div id="drop-hint" hidden>松开鼠标上传到"我的数据"</div>
+</section>
+
+<!-- 设置 -->
+<section id="view-settings" class="view" hidden>
+  <header class="topbar"><button class="icon back">←</button><span class="brand">设置</span></header>
+  <div class="page">
+    <h2>模型</h2>
+    <select id="model-select"></select>
+    <h2>确认方式（新对话的默认值；每个对话可在状态条上单独改）</h2>
+    <select id="perm-select">
+      <option value="readonly">只读文件：不改文件、不安装、不删除，只查询与分析（尽力拦截）</option>
+      <option value="ask">每步确认：删除、安装、覆盖写、计算类工具等先问我（推荐）</option>
+      <option value="edits">确认命令：改文件、跑 Python、用工具库自动放行，只有删除/安装/sudo 等危险命令才问</option>
+      <option value="auto">自动允许：全部放行，步骤里标"已自动允许"</option>
+    </select>
+    <h2>长期记忆</h2>
+    <textarea id="memory-text" rows="14"></textarea>
+    <div><button id="btn-save-memory" class="primary">保存记忆</button> <button id="btn-clear-memory">清空</button></div>
+    <h2>修改密码</h2>
+    <form id="password-form">
+      <label>原密码 <input name="old" type="password" required></label>
+      <label>新密码 <input name="new" type="password" required minlength="6"></label>
+      <button type="submit" class="primary">修改</button>
+    </form>
+    <p id="settings-msg" class="msg"></p>
+  </div>
+</section>
+
+<!-- 管理后台 -->
+<section id="view-admin" class="view" hidden>
+  <header class="topbar"><button class="icon back">←</button><span class="brand">管理后台</span>
+    <span class="spacer"></span>
+    <nav class="tabs">
+      <button data-tab="users" class="tab active">账号</button>
+      <button data-tab="usage" class="tab">用量</button>
+      <button data-tab="storage" class="tab">存储</button>
+      <button data-tab="files" class="tab">文件</button>
+      <button data-tab="logs" class="tab">日志</button>
+    </nav>
+  </header>
+  <div class="page">
+    <div id="admin-users" class="admin-tab">
+      <form id="new-user-form" class="inline">
+        <input name="name" placeholder="用户名" required>
+        <input name="password" placeholder="初始密码" required minlength="6">
+        <select name="role"><option value="user">普通</option><option value="admin">管理员</option></select>
+        <button class="primary">开设账号</button>
+      </form>
+      <table id="users-table"></table>
+    </div>
+    <div id="admin-usage" class="admin-tab" hidden>
+      <form id="usage-form" class="inline">
+        <select name="by"><option value="user">按账号</option><option value="day">按天</option><option value="month">按月</option></select>
+        <input name="user" placeholder="账号（可空）">
+        <input name="since" type="date"> <input name="until" type="date">
+        <button class="primary">查询</button> <button type="button" id="btn-usage-csv">导出 CSV</button>
+      </form>
+      <table id="usage-table"></table>
+    </div>
+    <div id="admin-storage" class="admin-tab" hidden><table id="storage-table"></table></div>
+    <div id="admin-files" class="admin-tab" hidden>
+      <form id="admin-files-form" class="inline">
+        <input name="user" placeholder="账号" required>
+        <select name="scope"><option value="files">我的数据</option></select>
+        <button class="primary">浏览</button>
+      </form>
+      <div id="admin-file-path" class="crumbs"></div>
+      <ul id="admin-file-list"></ul>
+    </div>
+    <div id="admin-logs" class="admin-tab" hidden>
+      <h3>登录记录</h3><pre id="auth-log"></pre>
+      <h3>服务器日志</h3><pre id="web-log"></pre>
+    </div>
+    <p id="admin-msg" class="msg"></p>
+  </div>
+</section>
+
+<aside id="drawer" hidden>
+  <header class="drawer-head"><span id="drawer-icon"></span><span id="drawer-title"></span><span class="spacer"></span><span id="drawer-meta"></span><button id="drawer-close" class="icon">✕</button></header>
+  <div class="drawer-body">
+    <div class="drawer-sec"><div class="sec-title">输入 <button id="drawer-copy" class="small">复制</button></div><pre id="drawer-in"></pre></div>
+    <div class="drawer-sec"><div class="sec-title">输出</div><pre id="drawer-out">（尚无输出）</pre></div>
+  </div>
+</aside>
+<template id="tpl-confirm">
+  <div class="confirm">
+    <span class="summary"></span>
+    <button class="allow primary">允许</button>
+    <button class="deny">拒绝</button>
+    <span class="state"></span>
+  </div>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

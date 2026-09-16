@@ -1,0 +1,56 @@
+{
+  "args": {
+    "organs": [
+      "intestine",
+      "brain",
+      "lung"
+    ],
+    "name": "all",
+    "model": "/root/autodl-fs/AI4S/weights/yolo/yolo11m.pt",
+    "epochs": 100,
+    "imgsz": 1024,
+    "batch": 8,
+    "eval_only": false,
+    "seed": 0
+  },
+  "name": "all",
+  "organs": [
+    "intestine",
+    "brain",
+    "lung"
+  ],
+  "best": "/root/autodl-fs/AI4S/weights/yolo/all/weights/best.pt",
+  "minutes": 126.21356678009033,
+  "per_organ": {
+    "intestine": {
+      "map50": 0.9476367645173808,
+      "map50_95": 0.7394556098619536,
+      "precision": 0.8908833551926476,
+      "recall": 0.8993236215287732,
+      "count_mape": 0.26190122465608295,
+      "n_gt": 8443,
+      "n_pred": 9303,
+      "n_images": 423
+    },
+    "brain": {
+      "map50": 0.9948220640569395,
+      "map50_95": 0.9412065340702258,
+      "precision": 0.9964390077471258,
+      "recall": 0.9993611769423412,
+      "count_mape": 0.017857142857142856,
+      "n_gt": 280,
+      "n_pred": 285,
+      "n_images": 280
+    },
+    "lung": {
+      "map50": 0.9362676479849498,
+      "map50_95": 0.754481790720828,
+      "precision": 0.8638916857593026,
+      "recall": 0.8581796748825139,
+      "count_mape": 0.23525642463928725,
+      "n_gt": 10702,
+      "n_pred": 11956,
+      "n_images": 602
+    }
+  }
+}

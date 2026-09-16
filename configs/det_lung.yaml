@@ -1,0 +1,6 @@
+path: /root/autodl-tmp/AI4S_data/processed/det
+train: ['/root/autodl-tmp/AI4S_data/processed/det/lung/train/images']
+val: ['/root/autodl-tmp/AI4S_data/processed/det/lung/val/images']
+test: ['/root/autodl-tmp/AI4S_data/processed/det/lung/test/images']
+names:
+  0: organoid

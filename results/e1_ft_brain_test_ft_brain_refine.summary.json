@@ -1,0 +1,30 @@
+{
+  "args": {
+    "model": "cyto3",
+    "organs": [
+      "brain"
+    ],
+    "split": "test",
+    "diameter": 0,
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "limit": 0,
+    "diameter_from_gt": false,
+    "tag": "ft_brain_refine",
+    "pretrained": "weights/cellpose_ft/brain/brain",
+    "diam_mode": "refine"
+  },
+  "summary": {
+    "brain": {
+      "n_images": 240,
+      "ap50": 0.9666666388511658,
+      "ap75": 0.9583333134651184,
+      "ap90": 0.8833333253860474,
+      "precision50": 0.9789029359817505,
+      "recall50": 0.9666666388511658,
+      "f1_50": 0.9727463126182556,
+      "count_mape": 0.0125,
+      "sec_per_image": 0.8209467242161433
+    }
+  }
+}

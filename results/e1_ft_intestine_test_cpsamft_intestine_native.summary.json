@@ -1,0 +1,27 @@
+{
+  "args": {
+    "pretrained": "weights/cpsam_ft/intestine/intestine",
+    "organs": [
+      "intestine"
+    ],
+    "split": "test",
+    "limit": 0,
+    "diam_mode": "native",
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "tag": "cpsamft_intestine_native"
+  },
+  "summary": {
+    "intestine": {
+      "n_images": 12,
+      "ap50": 0.7796903252601624,
+      "ap75": 0.6002178192138672,
+      "ap90": 0.20481820404529572,
+      "precision50": 0.8764768838882446,
+      "recall50": 0.8386433720588684,
+      "f1_50": 0.8571428060531616,
+      "count_mape": 0.15491291300587137,
+      "sec_per_image": 1.3372370998064678
+    }
+  }
+}

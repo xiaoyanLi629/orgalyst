@@ -1,0 +1,30 @@
+{
+  "args": {
+    "model": "cyto3",
+    "organs": [
+      "colon"
+    ],
+    "split": "test",
+    "diameter": 0,
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "limit": 0,
+    "diameter_from_gt": false,
+    "tag": "loo_colon_refine",
+    "pretrained": "weights/cellpose_ft/loo_colon/loo_colon",
+    "diam_mode": "refine"
+  },
+  "summary": {
+    "colon": {
+      "n_images": 10,
+      "ap50": 0.5803864002227783,
+      "ap75": 0.5566806793212891,
+      "ap90": 0.22518491744995117,
+      "precision50": 0.5859872698783875,
+      "recall50": 0.981333315372467,
+      "f1_50": 0.7337985634803772,
+      "count_mape": 0.6977919634402591,
+      "sec_per_image": 1.1819677114486695
+    }
+  }
+}

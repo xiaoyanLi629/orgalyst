@@ -1,0 +1,30 @@
+{
+  "args": {
+    "model": "cyto3",
+    "organs": [
+      "intestine"
+    ],
+    "split": "test",
+    "diameter": 0,
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "limit": 0,
+    "diameter_from_gt": false,
+    "tag": "loo_intestine_sizemodel",
+    "pretrained": "weights/cellpose_ft/loo_intestine/loo_intestine",
+    "diam_mode": "sizemodel"
+  },
+  "summary": {
+    "intestine": {
+      "n_images": 12,
+      "ap50": 0.19913409650325775,
+      "ap75": 0.16654904186725616,
+      "ap90": 0.06200907751917839,
+      "precision50": 0.9288703203201294,
+      "recall50": 0.2281603217124939,
+      "f1_50": 0.3663366436958313,
+      "count_mape": 0.7795541990786342,
+      "sec_per_image": 1.7754223148028057
+    }
+  }
+}

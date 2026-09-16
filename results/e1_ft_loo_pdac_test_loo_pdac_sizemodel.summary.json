@@ -1,0 +1,30 @@
+{
+  "args": {
+    "model": "cyto3",
+    "organs": [
+      "pdac"
+    ],
+    "split": "test",
+    "diameter": 0,
+    "flow_threshold": 0.4,
+    "cellprob_threshold": 0.0,
+    "limit": 0,
+    "diameter_from_gt": false,
+    "tag": "loo_pdac_sizemodel",
+    "pretrained": "weights/cellpose_ft/loo_pdac/loo_pdac",
+    "diam_mode": "sizemodel"
+  },
+  "summary": {
+    "pdac": {
+      "n_images": 20,
+      "ap50": 0.14894981682300568,
+      "ap75": 0.08246837556362152,
+      "ap90": 0.016762034967541695,
+      "precision50": 0.9042397737503052,
+      "recall50": 0.12047136574983597,
+      "f1_50": 0.21261601150035858,
+      "count_mape": 0.8133962413564658,
+      "sec_per_image": 2.2488107919692992
+    }
+  }
+}
