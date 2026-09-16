@@ -22,7 +22,7 @@ def ap(tag):
     fs = glob.glob(f"{R}/{tag}.summary.json")
     if not fs: return None
     d = J(fs[0])["summary"]; return {k: v["ap50"] for k, v in d.items()}
-di, db = C["diameter_intestine"], C["diameter_brain"]
+di, db = C["diameter_intestine"], C["diameter_brain"]; inf_n, inf_gt = C["inference"]["n_masks"], C["inference"]["gt_instances"]
 f = lambda x, n=3: f"{x:.{n}f}"
 def seg_counts(o): return {s: summ[f"seg/{o}/{s}"] for s in ("train", "val", "test")}
 def det_counts(o): return {s: summ[f"det/{o}/{s}"] for s in ("train", "val", "test")}
@@ -76,9 +76,11 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 
 <h3>4.2 分割：Cellpose 架构与按器官的专用权重</h3>
 <p>分割用 Cellpose（Stringer 等，Nature Methods 2021）。它的核心不是某种特定的网络，而是把"实例分割"改写成"回归一个流场"：训练时对每个人工标注的实例做一次以中心为热源的热扩散，得到每个像素指向所属实例中心的方向；网络（一个带残差块和跳跃连接的 U-Net）学习预测这两张方向图和一张"是不是目标"的概率图；推理时把每个前景像素沿方向图迭代移动约 200 步，汇聚到同一点的像素归为同一个实例。这个设计让它天然能处理粘连、非凸和大小悬殊的目标，也让"换骨干网络"成为可能，Cellpose-SAM 就是同一团队 2025 年把骨干换成 ViT 的版本。</p>
+<figure><img src="{img(f'{A}/cellpose_outputs.jpg')}"><figcaption><b>图 2a · 网络实际输出与追踪。</b>肠类器官测试图的一个 256×256 裁块：网络输出两张方向图（这里合成箭头画出）和一张概率图；把概率大于 0 的像素沿箭头走 200 步，落到同一点的归为一个实例，得到 {inf_n} 个实例，人工标注 {inf_gt} 个。粘连的两个类器官因为箭头指向不同的中心而被分开。</figcaption></figure>
+<figure><img src="{img(f'{A}/cellpose_diffusion.jpg')}"><figcaption><b>图 2b · 训练目标是怎么来的。</b>训练时不需要人画箭头：对每个人工标注的实例，以其中心为热源反复做热扩散（热只在实例内部传播，每步取四邻平均），几十步后热场沿着实例形状铺开，取热场的梯度就是每个像素应该指向的方向。这一步只依赖标注掩码，所以任何有实例标注的数据都能直接训练。</figcaption></figure>
 <p>Cellpose 有一个容易被忽视的前提：网络是在目标约 30 像素宽的尺度上训练的，推理前要先估计图中目标的典型直径，把图缩放到这个尺度。估错直径的后果很直接：估小了图被放大，一个类器官被拆成几块；估大了图被缩小，所有类器官糊成一团。Cellpose 自带一个从网络风格向量回归直径的尺寸估计器，但它是在细胞照片上训练的，对脑类器官这种 400 像素宽的大目标会给出约 30 像素的荒谬估计，导致零样本时脑的 AP50 只有 0.005。</p>
 <div class="fig3"><figure><img src="{di['small']['image']}"><figcaption>估成 12 px（偏小）：找到 {di['small']['n']} 个，大类器官被拆碎</figcaption></figure><figure><img src="{di['auto']['image']}"><figcaption>自动估计 {di['auto']['diameter']:.0f} px：找到 {di['auto']['n']} 个，人工数过 35 个</figcaption></figure><figure><img src="{di['large']['image']}"><figcaption>估成 150 px（偏大）：只找到 {di['large']['n']} 个</figcaption></figure></div>
-<p class="small">图 2 · 同一张肠类器官图、同一个模型，只改直径估计值。</p>
+<p class="small">图 2c · 同一张肠类器官图、同一个模型，只改直径估计值。</p>
 <p>我们的做法是<b>按器官加载专用权重，并为每种器官选择一个直径策略</b>。权重由通用的 cyto3 在 OrgLine 各器官训练集上继续训练 200 轮得到（第 5 节），训练时 Cellpose 会把训练集实例的中位直径记进权重（<code>diam_labels</code>）。直径策略有四种，通过 <code>orgalyst/config.py</code> 按器官注册：<code>model</code> 直接用权重里的训练直径（结肠）；<code>sizemodel</code> 用 cyto3 的尺寸估计器逐图估计（肠、pdac，这两种器官图与图之间放大倍率不同）；<code>refine</code> 两遍推理，第一遍用训练直径，第二遍用第一遍找到的目标的中位等效直径，钳在 0.25 到 4 倍之间（脑，因为脑类器官从第 2 天到第 30 天面积变化近五倍，单一直径会在两端失效）；<code>per_image_gt</code> 用真值直径，只作实验上限。不认识的器官退回零样本 cyto3 加尺寸估计器，并在报告里标注"通用模型，精度较低"。</p>
 <div class="fig3"><figure><img src="{db['auto']['image']}"><figcaption>通用 cyto3 + 自动直径（估成 {db['auto']['diameter']:.0f} px）：找到 {db['auto']['n']} 个</figcaption></figure><figure><img src="{db['d404']['image']}"><figcaption>通用 cyto3 + 直径改为 404 px：找到 {db['d404']['n']} 个</figcaption></figure><figure><img src="{db['finetuned']['image']}"><figcaption>脑专用权重（直径记在模型里）：找到 {db['finetuned']['n']} 个</figcaption></figure></div>
 <p class="small">图 3 · 脑类器官上，通用模型失败的原因是尺度而不是外观；专用权重把尺度记住了。</p>
