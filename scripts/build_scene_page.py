@@ -1,224 +1,159 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Orgalyst 平台场景动画：固定舞台上摆放平台的各个部件（助手、输入、Cellpose 分割、掩码、形态测量、质控、汇总/报告、运行目录），
-一个"数据令牌"沿箭头在部件之间移动，走到哪个部件哪个部件亮起并当场产出真实结果；右侧运行目录逐条记录。
-参考风格：ADC 比赛 demo 的 loopscene。数据来自 pipeline_demo_data.json（肠 2048² 图）与 cellpose_demo_data.json（热扩散、直径对照）。"""
-import base64, json
-S = "/private/tmp/claude-501/-Users-xiaoyanli/0850d9a1-4ef3-4938-beed-610f045d4857/scratchpad"
-P = json.load(open(f"{S}/pipeline_demo_data.json", encoding="utf-8"))
-C = json.load(open(f"{S}/cellpose_demo_data.json", encoding="utf-8"))
-P["report_thumb"] = "data:image/jpeg;base64," + base64.b64encode(open(f"{S}/report_thumb_small.jpg", "rb").read()).decode()
-P["growth_png"] = "data:image/png;base64," + base64.b64encode(open(f"{S}/growth_brain_test.png", "rb").read()).decode()
+"""生成 docs/orgalyst_scene.html：Orgalyst 全景流程动画（一张肠类器官照片从一句话到报告，19 个节点蛇形三行，
+核心环节放大；播放时亮点沿链路走、机器内部播放小动画；下方附“量错大小会怎样”与阅读说明）。
+输入：docs/pipeline_demo_data.json（scripts/export_pipeline_demo.py）、docs/cellpose_demo_data.json（export_cellpose_demo.py）、
+docs/design.html（取样式）、docs/assets/{report_thumb_small.jpg, growth_brain_test.png, dxdy_imgs.json, overlay_bold.json, qc_bold.json}。
+本文件由四代动画 builder 合并而来（scene → scene2 → story → overview → overview2），SVG 部件、补充节与主 JS 已物化为常量。"""
+import base64, json, os, re
+HERE = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(os.path.dirname(HERE), "docs"); A = os.path.join(D, "assets")
+P = json.load(open(f"{D}/pipeline_demo_data.json", encoding="utf-8"))
+C = json.load(open(f"{D}/cellpose_demo_data.json", encoding="utf-8"))
+P["report_thumb"] = "data:image/jpeg;base64," + base64.b64encode(open(f"{A}/report_thumb_small.jpg", "rb").read()).decode()
+P["growth_png"] = "data:image/png;base64," + base64.b64encode(open(f"{A}/growth_brain_test.png", "rb").read()).decode()
 DATA = json.dumps(dict(P=P, diffusion=C["diffusion"], diam_i=C["diameter_intestine"], diam_b=C["diameter_brain"], rescale=C["rescale"]), ensure_ascii=False)
 assert "</script" not in DATA
-CSS = open(f"{S}/design.html", encoding="utf-8").read().split("<style>")[1].split("</style>")[0]
+CSS = open(f"{D}/design.html", encoding="utf-8").read().split("<style>")[1].split("</style>")[0]
 r2, t3, m8, q9, m10 = P["s2_rescale"], P["s3_tiles"], P["s8_measure"], P["s9_qc"], P["s10_manifest"]
 di, db, rs, df = C["diameter_intestine"], C["diameter_brain"], C["rescale"], C["diffusion"]
-
+wid = m10["model"].split(":")[-1][:8]
+# ---- 物化的部件：U-Net 结构图、直径表盘、补充节（量错大小会怎样 + 阅读说明）、主 JS ----
+UNET = '<svg viewBox="0 0 176 96" aria-label="U-Net 结构示意">\n <rect class="blk" id="e1" x="8" y="6" width="26" height="12"/><rect class="blk" id="e2" x="20" y="24" width="22" height="12"/><rect class="blk" id="e3" x="32" y="42" width="18" height="12"/><rect class="blk" id="e4" x="44" y="60" width="14" height="12"/>\n <rect class="blk" id="bt" x="70" y="72" width="36" height="12"/>\n <rect class="blk" id="d4" x="118" y="60" width="14" height="12"/><rect class="blk" id="d3" x="126" y="42" width="18" height="12"/><rect class="blk" id="d2" x="134" y="24" width="22" height="12"/><rect class="blk" id="d1" x="142" y="6" width="26" height="12"/>\n <path class="skip" id="k1" d="M34 12 H142"/><path class="skip" id="k2" d="M42 30 H134"/><path class="skip" id="k3" d="M50 48 H126"/><path class="skip" id="k4" d="M58 66 H118"/>\n <text x="12" y="15">编码</text><text x="146" y="15">解码</text><text x="73" y="81">风格向量</text>\n <rect class="plug" id="plug" x="60" y="88" width="56" height="7" rx="2"/><text id="plugt" x="63" y="94" style="font-size:5.5px">权重: cyto3 (通用)</text>\n</svg>'
+GAUGE = '<svg viewBox="0 0 100 70" aria-label="尺寸估计表盘">\n <path d="M10 60 A40 40 0 0 1 90 60" fill="none" stroke="#5A6A70" stroke-width="6"/>\n <path d="M10 60 A40 40 0 0 1 50 20" fill="none" stroke="#3FB59F" stroke-width="6"/>\n <g stroke="#E3E9E6" stroke-width="1"><line x1="10" y1="60" x2="15" y2="60"/><line x1="50" y1="20" x2="50" y2="25"/><line x1="90" y1="60" x2="85" y2="60"/></g>\n <text x="4" y="68" font-size="6" fill="#E3E9E6" font-family="ui-monospace">0</text><text x="45" y="14" font-size="6" fill="#E3E9E6" font-family="ui-monospace">75</text><text x="84" y="68" font-size="6" fill="#E3E9E6" font-family="ui-monospace">150 px</text>\n <line class="needle" id="needle" x1="50" y1="60" x2="50" y2="26" stroke="#F5E9CF" stroke-width="2"/><circle cx="50" cy="60" r="3" fill="#F5E9CF"/>\n</svg><div class="gv" id="gv">直径 —</div>'
+GAUGE2 = '<svg viewBox="0 0 100 70" aria-label="尺寸估计表盘">\n <path d="M10 60 A40 40 0 0 1 90 60" fill="none" stroke="#5A6A70" stroke-width="6"/>\n <path d="M10 60 A40 40 0 0 1 50 20" fill="none" stroke="#3FB59F" stroke-width="6"/>\n <g stroke="#E3E9E6" stroke-width="1"><line x1="10" y1="60" x2="15" y2="60"/><line x1="50" y1="20" x2="50" y2="25"/><line x1="90" y1="60" x2="85" y2="60"/></g>\n <text x="4" y="68" font-size="6" fill="#E3E9E6" font-family="ui-monospace">0</text><text x="45" y="14" font-size="6" fill="#E3E9E6" font-family="ui-monospace">75</text><text x="84" y="68" font-size="6" fill="#E3E9E6" font-family="ui-monospace">150 px</text>\n <line class="needle" id="needle" x1="50" y1="60" x2="50" y2="26" stroke="#F5E9CF" stroke-width="2"/><circle cx="50" cy="60" r="3" fill="#F5E9CF"/>\n</svg><div style="position:absolute;left:0;right:0;bottom:4px;text-align:center;font-family:ui-monospace;font-size:9px;color:#E3E9E6" id="gv">直径 —</div>'
+TAIL = '补充：第 1 步"量多大"量错了会怎样</h2>\n<p>网络只认识大约 30 像素宽的东西，所以第 1 步要先估计类器官多大，再把照片缩到合适的比例。同一张照片、同一个模型，只改这个估计值：</p>\n<div class="grid3">\n  <figure><img src="__DI_S__"><figcaption><b>估成 12 像素（偏小）</b>：照片被放大，网络把大类器官拆碎或漏掉，只找到 __DI_SN__ 个</figcaption></figure>\n  <figure><img src="__DI_A__"><figcaption><b>估成 __DI_AD__ 像素（自动估计）</b>：找到 __DI_AN__ 个，人工数过是 35 个</figcaption></figure>\n  <figure><img src="__DI_L__"><figcaption><b>估成 150 像素（偏大）</b>：照片被缩得很小，所有类器官糊成一团，只找到 __DI_LN__ 个</figcaption></figure>\n</div>\n<p>脑类器官更极端：通用模型自带的估计器是在细胞照片上学的，看到 400 像素的大团块猜成 __DB_AD__ 像素，按这个放大十几倍后什么也找不到；把估计值改成 404，同一个通用模型立刻找到；我们微调过的脑专用模型把这个数记在了模型里。</p>\n<div class="two"><div><img src="__RS_O__" alt="脑类器官原图" style="max-width:100%"><div class="small">脑类器官原图 __RS_OW__×__RS_OH__ 像素，目标约 404 像素宽</div></div><div><img src="__RS_S__" width="__RS_SW3__" height="__RS_SH3__" alt="缩放后"><div class="small">按 404 缩到目标 30 像素后：__RS_SW__×__RS_SH__ 像素（放大 3 倍显示）</div></div></div>\n<div class="grid3">\n  <figure><img src="__DB_A__"><figcaption><b>通用模型，自动估计 __DB_AD__</b>：__DB_AN__ 个</figcaption></figure>\n  <figure><img src="__DB_D__"><figcaption><b>通用模型，手动给 404</b>：__DB_DN__ 个</figcaption></figure>\n  <figure><img src="__DB_F__"><figcaption><b>脑专用微调模型（自带 404）</b>：__DB_FN__ 个</figcaption></figure>\n</div>\n\n<h2 id="notes">阅读说明</h2>\n<p>第 1 到第 4 步是 Cellpose（Stringer 等，2021）这套分割方法的推理过程：估计大小并缩放、切块、U-Net 神经网络输出方向图和"哪里是类器官"图、按方向图把像素聚成一个个类器官。本项目没有改动这套方法的结构，改的是装进 U-Net 的权重（通用的 cyto3 权重在 OrgLine 公开数据上按器官微调）和第 1 步的估计策略。第 5 步以后是 Orgalyst 在分割之上加的分析，全部是确定性的计算，不经过大模型；对话式助手只做第 0 步：听懂用户要什么、选工具、事后解释。所有数字来自本次真实运行；第 4 步的粒子动画只画了部分像素，按网络输出的真实方向图移动。</p>\n<p class="small">参考：Stringer C 等，Cellpose: a generalist algorithm for cellular segmentation，Nat Methods 2021 · Stringer C, Pachitariu M，Cellpose3，Nat Methods 2025 · Pachitariu M 等，Cellpose-SAM，bioRxiv 2025。</p>\n</main>\n</div>\n'
+JS = "\nconst X=JSON.parse(document.getElementById('data').textContent),P=X.P;\nconst reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;\nconst $=s=>document.querySelector(s);\nfunction i8(b64){const s=atob(b64);const a=new Float32Array(s.length);for(let i=0;i<s.length;i++){let v=s.charCodeAt(i);if(v>127)v-=256;a[i]=v/127;}return a;}\nfunction u16(b64){const s=atob(b64);const a=new Uint16Array(s.length/2);for(let i=0;i<a.length;i++)a[i]=s.charCodeAt(2*i)|(s.charCodeAt(2*i+1)<<8);return a;}\nfunction bits(b64,n){const s=atob(b64);const a=new Uint8Array(n);for(let i=0;i<n;i++)a[i]=(s.charCodeAt(i>>3)>>(7-(i&7)))&1;return a;}\nconst hsl=i=>'hsl('+((i*137.508)%360)+',65%,58%)';\nconst img=src=>{const e=new Image();e.src=src;return e;};\nconst IM={input:img(P.s1_input.image),small:img(P.s2_rescale.small)};\nconst N=512,dx=i8(P.s4_net.dx),dy=i8(P.s4_net.dy),cp=i8(P.s4_net.cellprob),mk=u16(P.s6_track.masks);\nconst sw=P.s2_rescale.small_size[0],d1=P.s2_rescale.diameter;\nlet anim=null,timers=[];function later(fn,ms){timers.push(setTimeout(fn,reduce?0:ms));}function clearAll(){cancelAnimationFrame(anim);timers.forEach(clearTimeout);timers=[];}\nfunction drawTilesStatic(){const c=$('#oc').getContext('2d'),T=P.s3_tiles.tiles,f=120/sw;c.drawImage(IM.small,0,0,120,120);T.forEach(([x,y,w,h])=>{c.strokeStyle='rgba(63,181,159,.9)';c.strokeRect(x*f+.5,y*f+.5,w*f-1,h*f-1);});}\nfunction tilesAnim(inst){const c=$('#tc').getContext('2d'),T=P.s3_tiles.tiles,f=86/sw,ox=(120-86)/2;c.fillStyle='#0d1214';c.fillRect(0,0,120,90);c.drawImage(IM.small,ox,2,86,86);let i=0;cancelAnimationFrame(anim);const g=()=>{for(let k=0;k<((reduce||inst)?T.length:3)&&i<T.length;k++,i++){const [x,y,w,h]=T[i];c.fillStyle='rgba(63,181,159,.12)';c.fillRect(ox+x*f,2+y*f,w*f,h*f);c.strokeStyle='rgba(63,181,159,.95)';c.strokeRect(ox+x*f+.5,2+y*f+.5,w*f-1,h*f-1);}if(i<T.length)anim=requestAnimationFrame(g);};g();}\nfunction trackAnim(inst){const c=$('#kc').getContext('2d'),parts=[];for(let y=2;y<N;y+=7)for(let x=2;x<N;x+=7){const i=y*N+x;if(cp[i]>0)parts.push({x:x+.5,y:y+.5,id:mk[i]});}let step=0;const STEPS=200,f=86/N,ox=(120-86)/2;cancelAnimationFrame(anim);\n  const samp=(a,x,y)=>{const x0=Math.max(0,Math.min(N-2,x|0)),y0=Math.max(0,Math.min(N-2,y|0)),fx=x-x0,fy=y-y0;return a[y0*N+x0]*(1-fx)*(1-fy)+a[y0*N+x0+1]*fx*(1-fy)+a[(y0+1)*N+x0]*(1-fx)*fy+a[(y0+1)*N+x0+1]*fx*fy;};\n  const g=()=>{for(let k=0;k<((reduce||inst)?STEPS:6)&&step<STEPS;k++,step++)for(const p of parts){p.x=Math.max(0,Math.min(N-1,p.x+samp(dx,p.x,p.y)));p.y=Math.max(0,Math.min(N-1,p.y+samp(dy,p.x,p.y)));}c.fillStyle='#0d1214';c.fillRect(0,0,120,90);c.drawImage(IM.input,ox,2,86,86);c.fillStyle='rgba(0,0,0,.6)';c.fillRect(ox,2,86,86);const done=step>=STEPS;for(const p of parts){c.fillStyle=done?hsl(p.id||0):'#3FB59F';c.fillRect(ox+p.x*f-.8,2+p.y*f-.8,1.6,1.6);}if(!done)anim=requestAnimationFrame(g);};g();}\nfunction trackStatic(){const c=$('#kc').getContext('2d'),ox=(120-86)/2;c.fillStyle='#0d1214';c.fillRect(0,0,120,90);c.drawImage(IM.input,ox,2,86,86);c.fillStyle='rgba(0,0,0,.55)';c.fillRect(ox,2,86,86);const f=86/N;for(let y=2;y<N;y+=7)for(let x=2;x<N;x+=7){const i=y*N+x;if(cp[i]>0){c.fillStyle='#3FB59F';c.fillRect(ox+x*f,2+y*f,1.4,1.4);}}}\nconst UB=['e1','e2','e3','e4','bt','d4','d3','d2','d1'];\nfunction unetReset(){UB.forEach(b=>$('#'+b).classList.remove('lit'));['k1','k2','k3','k4'].forEach(k=>$('#'+k).classList.remove('lit'));$('#plug').classList.remove('ft');$('#plugt').textContent='权重: cyto3 (通用)';}\nfunction unetAnim(inst){later(()=>{$('#plug').classList.add('ft');$('#plugt').textContent='权重: 肠微调 __WID__';},inst?0:200);UB.forEach((b,i)=>later(()=>{$('#'+b).classList.add('lit');if(i>=5)$('#k'+(9-i)).classList.add('lit');},inst?0:500+i*260));}\nfunction chips(sel,inst){[...$(sel).children].forEach((c,i)=>later(()=>c.style.opacity=1,inst?0:300+i*450));}\nfunction chipsReset(sel){[...$(sel).children].forEach(c=>c.style.opacity=.35);}\nfunction qcAnim(inst){const e=$('#qi');const tf=['scaleX(-1)','scaleY(-1)','rotate(90deg)','rotate(180deg)','none'];tf.forEach((t,i)=>later(()=>{e.style.transform=t;},inst?0:200+i*550));later(()=>{e.src=P.s9_qc.overlay;},inst?0:3100);}\nfunction qcReset(){const e=$('#qi');e.style.transform='none';e.src=P.s1_input.image;}\nfunction docAnim(inst){const d=$('#doc');d.innerHTML='';['概览','逐图结果','分布图','质控','方法','溯源'].forEach((t,i)=>later(()=>{const l=document.createElement('div');l.style.cssText='font-size:7px;color:#1B262C;border-left:2px solid #0E7A6C;padding-left:3px;width:'+(55+i*7)+'%';l.textContent=t;d.appendChild(l);},inst?0:200+i*380));}\nfunction gaugeAnim(inst){const ang=-90+180*Math.min(1,d1/150);later(()=>{$('#n3 .needle').style.transform='rotate('+ang+'deg)';},inst?0:150);later(()=>{$('#gv').textContent=d1.toFixed(0)+' px';},inst?0:1200);}\nfunction gaugeReset(){$('#n3 .needle').style.transform='rotate(-90deg)';$('#gv').textContent='直径 —';}\nconst NODES=[\n {id:'n0',cap:'0 · 你只需要说一句话。不需要知道任何参数。'},\n {id:'n1',cap:'1 · 助手（大模型）听懂任务、选择「分析图像」工具、填参数：器官是肠，所以后面的网络会装上肠专用权重。它不看照片、不算数。',run(i){chips('#planchips',i);}},\n {id:'n2',cap:'2 · 照片进入流水线：2048×2048 像素的灰度显微照片。'},\n {id:'n3',cap:'3 · 神经网络只认识大约 30 像素宽的东西，所以先用一个小模型估计类器官多大（约 '+d1.toFixed(0)+' 像素），再把照片缩小到 '+P.s2_rescale.scale.toFixed(2)+' 倍。',run(i){gaugeAnim(i);}},\n {id:'n4',cap:'4 · 得到缩小后的照片，'+sw+'×'+sw+' 像素，类器官现在约 30 像素宽。'},\n {id:'n5',cap:'5 · 切块机把照片切成 224×224 的小块，相邻块重叠一半，免得类器官正好卡在边上。',run(i){tilesAnim(i);}},\n {id:'n6',cap:'6 · 得到 '+P.s3_tiles.n+' 张小图块，逐块送进网络。'},\n {id:'n7',cap:'7 · U-Net：先压缩提取特征，再还原到每个像素。装在它上面的权重决定它认识什么——通用的 cyto3 权重认识细胞，我们在公开的肠类器官数据上继续训练成肠专用权重。结构不变，换的是权重。',run(i){unetAnim(i);}},\n {id:'n8',cap:'8 · 每块图得到三张图，拼回整图：两张方向图（每个像素朝它所属类器官中心的方向）和一张「哪里像类器官」。'},\n {id:'n9',cap:'9 · 每个「像类器官」的像素按自己的箭头走 200 步，同一个类器官里的像素走到同一个点；走到同一点的归为一个。相邻的两个各有各的中心，所以能分开。',run(i){trackAnim(i);}},\n {id:'n10',cap:'10 · 得到 '+P.s7_masks.n+' 个类器官的轮廓（人工数过 '+P.gt_instances+' 个）。到这里分割结束，后面是 Orgalyst 的分析。'},\n {id:'n11',cap:'11 · 测量尺对每个轮廓算面积、直径、周长、圆度、实心度、长宽比。纯几何计算，没有任何猜测；知道像素大小时换算成微米。',run(i){chips('#mchips',i);}},\n {id:'n12',cap:'12 · 得到一张表，每个类器官一行，共 '+P.s8_measure.n+' 行；贴着照片边缘的 '+P.s8_measure.summary.border_excluded+' 个不完整，汇总时排除。'},\n {id:'n13',cap:'13 · 质检员把照片翻转、旋转后再让网络找一遍：真正的类器官怎么转都能找到，翻一下就消失的说明网络没把握。另外检查失焦、光照不均。',run(i){qcAnim(i);}},\n {id:'n14',cap:'14 · 得到标记：'+P.s9_qc.n_low+' 个不可靠（橙色），整体一致性 '+P.s9_qc.agreement_mean.toFixed(2)+'。'},\n {id:'n15',cap:'15 · 很多张照片的表放在一起：按分组做统计检验和效应量，按时间点连成生长曲线。示例是另一批脑类器官 30 天的数据。',run(i){chips('#schips',i);}},\n {id:'n16',cap:'16 · 得到曲线与比较结果：4 个克隆 30 天的面积变化，细线是个体，粗线是平均。'},\n {id:'n17',cap:'17 · 报告生成器把所有内容排成一份单文件网页，并记下这次用的照片校验码、权重、参数、版本，任何人可以照着复现。',run(i){docAnim(i);}},\n {id:'n18',cap:'18 · 最终得到报告和运行记录。助手据此向你汇报，并能回答追问。'},\n];\nconst board=$('#board');\nfunction center(id){const b=board.getBoundingClientRect(),r=$('#'+id).getBoundingClientRect();return [r.left-b.left+r.width/2,r.top-b.top+10];}\nlet cur=-1,playing=!reduce,t0=0,speed=1,raf=null;const DUR=4200;\nfunction resetAll(){clearAll();chipsReset('#planchips');chipsReset('#mchips');chipsReset('#schips');gaugeReset();unetReset();qcReset();$('#doc').innerHTML='';trackStatic();const c=$('#tc').getContext('2d');c.fillStyle='#0d1214';c.fillRect(0,0,120,90);c.drawImage(IM.small,17,2,86,86);}\nfunction go(i){clearAll();resetAll();for(let k=0;k<i;k++){const n=NODES[k];n.run&&n.run(true);}cur=i;\n  NODES.forEach((n,k)=>$('#'+n.id).classList.toggle('on',k===i));document.querySelectorAll('.ar').forEach((a,k)=>a.classList.toggle('on',k===i-1));$('#w1').classList.toggle('on',i===7);$('#w2').classList.toggle('on',i===13);\n  const [x,y]=center(NODES[i].id);const t=$('#token');t.style.left=x+'px';t.style.top=y+'px';\n  $('#cap').textContent=NODES[i].cap;$('#stepno').textContent='第 '+(i+1)+' / '+NODES.length+' 站';NODES[i].run&&later(()=>NODES[i].run(false),600);t0=performance.now();}\nfunction tick(){if(!playing)return;const e=performance.now()-t0,d=DUR*speed*(NODES[cur].run?1.25:0.7);$('#bar').style.width=Math.min(100,100*e/d)+'%';if(e>=d){if(cur<NODES.length-1)go(cur+1);else{playing=false;$('#b-play').textContent='播放';return;}}raf=requestAnimationFrame(tick);}\nfunction start(){cancelAnimationFrame(raf);t0=performance.now();raf=requestAnimationFrame(tick);}\n$('#b-play').onclick=function(){playing=!playing;this.textContent=playing?'暂停':'播放';if(playing){if(cur<0||cur>=NODES.length-1)go(0);start();}else cancelAnimationFrame(raf);};\n$('#b-prev').onclick=()=>{if(cur>0){go(cur-1);if(playing)start();}};$('#b-next').onclick=()=>{if(cur<NODES.length-1){go(cur+1);if(playing)start();}};\n$('#b-restart').onclick=()=>{playing=true;$('#b-play').textContent='暂停';go(0);start();};\n$('#spd').onchange=e=>{speed=parseFloat(e.target.value);};\nNODES.forEach((n,i)=>{$('#'+n.id).style.cursor='pointer';$('#'+n.id).onclick=()=>{go(i);if(playing)start();};});\nwindow.addEventListener('resize',()=>{if(cur>=0){const [x,y]=center(NODES[cur].id);$('#token').style.left=x+'px';$('#token').style.top=y+'px';}});\nlet loaded=0;Object.values(IM).forEach(e=>{e.onload=()=>{if(++loaded===Object.keys(IM).length){drawTilesStatic();resetAll();go(0);if(playing)start();else $('#b-play').textContent='播放';}};});\n"
 EXTRA = """
-main{max-width:1000px}main>p,main>h2,main>header,main>.stage2,main>.grid3,main>.two{max-width:76ch}main>.stage2,main>.grid3{max-width:100%}
-.scenewrap{overflow-x:auto;margin:14px 0 6px}
-.scene{position:relative;width:100%;min-width:760px;aspect-ratio:1000/760;border:1px solid var(--rule);border-radius:8px;background:var(--panel);overflow:hidden}
-.ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
-.seg{fill:none;stroke:var(--rule);stroke-width:3;opacity:.7;transition:stroke .3s,opacity .3s}
-.seg.on{stroke:var(--accent);opacity:1;stroke-dasharray:10 8;animation:dash .6s linear infinite}.seg.done{stroke:var(--accent);opacity:.45}
-@keyframes dash{to{stroke-dashoffset:-18}}
-.rhp{fill:var(--rule)}.seg.on+.rhp,.rhp.on{fill:var(--accent)}
-.zone{position:absolute;z-index:1;display:flex;flex-direction:column;gap:6px;padding:9px 11px;border-radius:8px;background:var(--paper);border:1px solid var(--rule);overflow:hidden;transition:box-shadow .35s,border-color .35s,opacity .35s;font-size:12.5px;line-height:1.45}
-.zone.on{border-color:var(--accent);box-shadow:0 0 0 4px rgba(14,122,108,.16),0 8px 22px rgba(0,0,0,.10)}.zone.done{border-color:var(--accent)}
-.zone.idle{opacity:.72}
-.zt{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.zt .num{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.08em}
-.chip{font-family:var(--mono);font-size:10px;padding:0 6px;border-radius:9px;border:1px solid var(--rule);color:var(--muted);white-space:nowrap}.chip.ok{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
-.zsub{font-size:11px;color:var(--muted);line-height:1.4;margin-top:auto}
-.z-agent{left:2%;top:1.5%;width:96%;height:11.5%;flex-direction:row;align-items:center;gap:14px}
-.z-agent .bubble{flex:1 1 40%;min-width:0;border:1px solid var(--rule);border-radius:6px;padding:4px 10px;font-size:12.5px;line-height:1.35;background:var(--panel);max-height:2.9em;overflow:hidden}.z-agent .plan{flex:1 1 44%}
-.z-agent .plan{display:flex;gap:6px;flex-wrap:wrap}.z-agent .plan .chip{opacity:.35;transition:opacity .3s}.z-agent .plan .chip.ok{opacity:1}
-.z-input{left:2%;top:15%;width:14%;height:42%}.z-seg{left:18%;top:15%;width:46%;height:42%}.z-mask{left:66%;top:15%;width:16%;height:42%}
-.z-trace{left:84%;top:15%;width:14%;height:83%}.z-measure{left:2%;top:60%;width:32%;height:38%}.z-qc{left:36%;top:60%;width:22%;height:38%}.z-out{left:60%;top:60%;width:22%;height:38%}
-.thumb{width:100%;border:1px solid var(--rule);border-radius:4px;display:block;background:#0d1214}
-.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;flex:1;min-height:0}
-.slot{display:flex;flex-direction:column;gap:3px;min-width:0;opacity:.35;transition:opacity .3s}.slot.on,.slot.done{opacity:1}
-.slot canvas{width:100%;aspect-ratio:1/1;height:auto;border:1px solid var(--rule);border-radius:4px;background:#0d1214;display:block}
-.slot .sl{font-size:11px;line-height:1.3;color:var(--muted)}.slot.on .sl{color:var(--ink)}.slot .sl b{display:block;font-size:11.5px;color:var(--ink)}
-.count{font-family:var(--serif);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}.count small{font-family:var(--sans);font-size:11px;color:var(--muted);display:block}
-.tbl{flex:1;min-height:0;overflow:hidden}.tbl table{width:100%;border-collapse:collapse;font-size:11px;min-width:0}.tbl th,.tbl td{padding:2px 5px;border-bottom:1px solid var(--rule);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.tbl th:first-child,.tbl td:first-child{text-align:left}.tbl th{background:var(--panel);font-weight:600}
-.tbl tr{opacity:0;transition:opacity .3s}.tbl tr.in{opacity:1}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px;font-size:11px}.metrics b{font-family:var(--mono);font-weight:500}
-.trace{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:3px;font-family:var(--mono);font-size:10.5px;line-height:1.35}
-.trace .tl{border-left:2px solid var(--accent);padding:2px 6px;background:var(--accent-soft);border-radius:0 3px 3px 0;opacity:0;transform:translateX(6px);transition:all .35s;word-break:break-all}.trace .tl.in{opacity:1;transform:none}
-.token{position:absolute;z-index:3;left:50%;top:7%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;padding:4px 8px 4px 4px;border-radius:20px;background:var(--accent);color:var(--accent-ink);font-size:11.5px;font-weight:600;box-shadow:0 6px 16px rgba(14,122,108,.35);transition:left .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1);white-space:nowrap;pointer-events:none}
-.token img{width:22px;height:22px;border-radius:50%;object-fit:cover;background:#000}
-.cap{margin:8px 0 0;padding:8px 14px;border-radius:6px;background:var(--ink);color:var(--paper);font-size:13.5px;line-height:1.5;min-height:2.6em}
+.wrap{grid-template-columns:minmax(0,1fr);gap:0}nav.toc{position:static;display:flex;gap:14px;flex-wrap:wrap;padding:18px 0 0;max-height:none}nav.toc .k{margin:0;align-self:center}nav.toc a{border-left:0;padding:2px 8px;border:1px solid var(--rule);border-radius:12px}
+main{max-width:none}main>p,main>h2,main>header,main>.two{max-width:80ch}
+.legend2{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:8px 0 6px}.legend2 i{display:inline-block;width:14px;height:10px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.boardwrap{overflow-x:auto}
+.board{position:relative;min-width:1080px;border:1px solid var(--rule);border-radius:12px;background:var(--panel);padding:18px 18px 14px}
+.rows{display:flex;flex-direction:column;gap:50px}
+.rowl{display:flex;align-items:stretch;gap:0;position:relative}.rowl.rev{flex-direction:row-reverse}
+.rowl.rev .ar svg{transform:scaleX(-1)}
+.node{position:relative;min-width:0;display:flex;flex-direction:column;gap:5px;border-radius:10px;padding:10px 11px 9px;transition:box-shadow .35s,transform .35s;z-index:1}
+.node.data{border:1.5px solid var(--rule);background:var(--paper)}
+.node.mach{border:2px solid var(--accent);background:var(--accent-soft)}
+.node.s{flex:1 1 0}.node.m{flex:1.35 1 0}.node.l{flex:1.9 1 0}.node.xl{flex:2.4 1 0;border-width:3px}
+.node.s .k,.node.s h5,.node.s .d{opacity:.85}.node.s h5{font-size:12px}.node.s .d{font-size:10.5px}
+.node.on{box-shadow:0 0 0 5px rgba(14,122,108,.22),0 12px 28px rgba(14,122,108,.22);transform:translateY(-4px)}
+.node.on.mach{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 9px rgba(14,122,108,.12),0 12px 28px rgba(14,122,108,.22)}}
+.node .num{position:absolute;left:-10px;top:-10px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.node.mach .num{background:var(--accent);color:var(--accent-ink)}
+.node .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.node.mach .k{color:var(--accent)}
+.node h5{margin:0;font-size:13.5px;line-height:1.25}.node.l h5,.node.xl h5{font-size:16px}.node.xl h5{font-family:var(--serif);font-size:19px}
+.node .vis{width:100%;aspect-ratio:1/1;border-radius:6px;background:#0d1214;border:1px solid var(--rule);position:relative;overflow:hidden}
+.node.mach .vis{aspect-ratio:4/3}.node.xl .vis{aspect-ratio:16/10}#n13 .vis{aspect-ratio:1/1}#n12 .vis{aspect-ratio:auto;height:auto;background:var(--paper);overflow-x:auto}#n12 .tbl{position:static}
+.node .vis canvas,.node .vis svg,.node .vis img{position:absolute;inset:0;width:100%;height:100%}.node .vis img{object-fit:cover}.node .vis img.fit{object-fit:contain;background:#fff}
+.node .d{font-size:11.5px;line-height:1.35;color:var(--muted)}.node .d b{color:var(--ink)}.node.l .d,.node.xl .d{font-size:12.5px}
+.ar{flex:0 0 30px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color .3s;z-index:0}.ar svg{width:26px;height:20px}.ar.on{color:var(--accent)}.ar.on svg path{stroke-dasharray:6 4;animation:dash .5s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-10}}
+.down{position:absolute;width:44px;height:46px;color:var(--muted);z-index:0}.down svg{width:100%;height:100%}.down.on{color:var(--accent)}.down.on svg path{stroke-dasharray:6 4;animation:dash .5s linear infinite}
+.grp{position:absolute;top:-24px;font-size:11px;color:var(--muted);letter-spacing:.04em;border-top:1px dashed var(--rule);padding-top:3px;text-align:center;pointer-events:none}
+.gauge .needle{transform-origin:50px 60px;transform:rotate(-90deg);transition:transform 1.2s cubic-bezier(.3,.8,.3,1)}
+.unet .blk{fill:#1B2529;stroke:#5A6A70;stroke-width:1;transition:fill .25s,stroke .25s}.unet .blk.lit{fill:#3FB59F;stroke:#E3E9E6}
+.unet .skip{stroke:#5A6A70;stroke-width:1;stroke-dasharray:3 2;fill:none}.unet .skip.lit{stroke:#3FB59F}
+.unet .plug{fill:#9A6A12;stroke:#F5E9CF;stroke-width:1}.unet .plug.ft{fill:#0E7A6C;stroke:#D9EEE9}
+.unet text{font-family:ui-monospace,Menlo,monospace;font-size:7px;fill:#E3E9E6}
+.three{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:3px;padding:3px;box-sizing:border-box;position:absolute;inset:0}.three figure{margin:0;min-height:0;height:100%;display:flex;align-items:center;gap:5px}.node .vis .three img{position:static;height:100%;aspect-ratio:1/1;width:auto;flex:0 0 auto;object-fit:cover;border-radius:2px}.three figcaption{font-size:10px;line-height:1.2;color:#E3E9E6;white-space:nowrap}
+.tbl{width:100%;min-width:0;font-size:8px;table-layout:fixed;border-collapse:collapse;position:absolute;inset:0;background:var(--paper)}.tbl th,.tbl td{padding:1px 1px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap;overflow:hidden;font-variant-numeric:tabular-nums}.tbl th:first-child,.tbl td:first-child{text-align:left}.tbl th{background:var(--panel);font-size:inherit;font-weight:600;padding:2px 1px}
+.token{position:absolute;z-index:5;width:20px;height:20px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 4px 12px rgba(14,122,108,.5);transform:translate(-50%,-50%);transition:left .8s cubic-bezier(.4,0,.2,1),top .8s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.cap{margin:10px 0 0;padding:10px 16px;border-radius:6px;background:var(--ink);color:var(--paper);font-size:14.5px;line-height:1.55;min-height:3em}
 .ctl{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px;align-items:center}
 button{font:inherit;font-size:13px;padding:6px 12px;border:1px solid var(--rule);border-radius:4px;background:var(--panel);color:var(--ink);cursor:pointer}
 button:hover,button:focus-visible{border-color:var(--accent);outline:none}button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .bar{height:3px;background:var(--rule);border-radius:2px;margin:8px 0 0;overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--accent)}
-.stage2{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start;margin:12px 0}
+.stage2{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:16px;align-items:start;margin:12px 0;max-width:80ch}
 @media (max-width:700px){.stage2{grid-template-columns:minmax(0,1fr)}}
 .stage2 canvas{max-width:100%;height:auto;border:1px solid var(--rule);border-radius:4px;background:#000;display:block}
 .legend{font-size:13px;color:var(--muted);line-height:1.6}.legend b{color:var(--ink)}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0 18px}.grid3 figure{margin:0}.grid3 img{width:100%;border:1px solid var(--rule);border-radius:4px}.grid3 figcaption{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}.grid3 figcaption b{color:var(--ink)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:12px 0 18px;max-width:80ch}.grid3 figure{margin:0}.grid3 img{width:100%;border:1px solid var(--rule);border-radius:4px}.grid3 figcaption{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}.grid3 figcaption b{color:var(--ink)}
 .two{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin:12px 0}.two img{border:1px solid var(--rule);border-radius:4px;image-rendering:pixelated}
 @media (max-width:600px){.two{grid-template-columns:1fr}}
-@media (prefers-reduced-motion:reduce){.token,.zone,.seg,.slot,.tbl tr,.trace .tl{transition:none;animation:none}}
+@media (prefers-reduced-motion:reduce){.node,.ar svg path,.token,.gauge .needle,.down svg path{transition:none;animation:none}}
 """
+AR = '<svg viewBox="0 0 26 20" aria-hidden="true"><path d="M2 10 H17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><path d="M13 3 L21 10 L13 17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+DOWN = '<svg viewBox="0 0 44 40" aria-hidden="true"><path d="M22 2 V28" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><path d="M12 20 L22 32 L32 20" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+def node(kind, size, id, num, k, title, vis, d): return f'<div class="node {kind} {size}" id="{id}"><div class="num">{num}</div><div class="k">{k}</div><h5>{title}</h5><div class="vis">{vis}</div><div class="d">{d}</div></div>'
+ar = lambda i: f'<div class="ar" id="a{i}">{AR}</div>'
+sw = r2["small_size"][0]
+DXDY = json.load(open(f"{A}/dxdy_imgs.json"))
+OVB = json.load(open(f"{A}/overlay_bold.json"))
+QCB = json.load(open(f"{A}/qc_bold.json"))
+three = f'<div class="three"><figure><img src="{DXDY["dx"]}"><figcaption>① 左右方向</figcaption></figure><figure><img src="{DXDY["dy"]}"><figcaption>② 上下方向</figcaption></figure><figure><img src="{P["s4_net"]["prob"]}"><figcaption>③ 哪里像</figcaption></figure></div>'
+cols = ["编号", "面积", "直径", "周长", "圆度", "实心"]
+tbl = '<table class="tbl"><colgroup><col style="width:13%"><col style="width:23%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup><tr>' + "".join(f"<th>{c}</th>" for c in cols) + "</tr>" + "".join(f"<tr><td>{r[0]}</td><td>{r[1]:,}</td><td>{r[2]:.0f}</td><td>{r[3]:.0f}</td><td>{r[4]:.2f}</td><td>{r[5]:.2f}</td></tr>" for r in m8["rows"][:8]) + '</table>'
+chip = lambda t: f'<span style="font-size:9.5px;line-height:1.25;color:#E3E9E6;border:1px solid #3FB59F;border-radius:5px;padding:1px 5px;opacity:.35">{t}</span>'
+ROW1 = (node("data", "s", "n0", 1, "输入", "你的一句话", '<div style="position:absolute;inset:6px;color:#E3E9E6;font-size:10.5px;line-height:1.4">"分析这批肠类器官照片，告诉我大小和形状，给我一份报告。"</div>', "不需要懂参数") + ar(0) +
+        node("mach", "m", "n1", 2, "大模型 · 对话式助手", "助手：听懂并安排", f'<div style="position:absolute;inset:5px;display:flex;flex-direction:column;gap:3px;justify-content:center" id="planchips">{chip("任务：形态分析")}{chip("工具：分析图像")}{chip("器官=肠 → 肠专用权重")}</div>', "不看图、不算数，只选工具和参数") + ar(1) +
+        node("data", "l", "n2", 3, "输入", "显微照片", f'<img src="{P["s1_input"]["image"]}">', f"<b>{P['shape'][0]}×{P['shape'][1]}</b> 像素，灰度；人工数过 <b>{P['gt_instances']}</b> 个") + ar(2) +
+        node("mach", "s", "n3", 4, "细节 · 小模型", "量大小、缩放", '<div class="gauge" style="position:absolute;inset:0">' + GAUGE2 + '</div>', f"约 <b>{r2['diameter']:.0f} px</b> → 缩到 {r2['scale']:.2f} 倍") + ar(3) +
+        node("data", "s", "n4", 5, "细节 · 中间结果", "缩小后的照片", f'<img src="{P["s2_rescale"]["small"]}">', f"{sw}×{sw}，类器官约 30 px") + ar(4) +
+        node("mach", "s", "n5", 6, "细节 · 工具", "切块", '<canvas id="tc" width="120" height="90"></canvas>', "224×224，重叠一半") + ar(5) +
+        node("data", "s", "n6", 7, "细节 · 中间结果", f"{t3['n']} 张小图块", '<canvas id="oc" width="120" height="120"></canvas>', "逐块送进网络"))
+# 第二行从右往左读（row-reverse）：写入顺序仍按流程顺序
+ROW2 = (node("mach", "xl", "n7", 8, "核心 · 神经网络", "U-Net（装着肠专用权重）", f'<div class="unet" style="position:absolute;inset:4px">{UNET}</div>', "先压缩提取特征，再还原到每个像素。<b>结构不变，换的是权重</b>：通用的 cyto3 权重认识细胞，我们在公开肠类器官数据上继续训练成肠专用权重。") + ar(6) +
+        node("data", "m", "n8", 9, "细节 · 中间结果", "网络给出的三张图", three, "两张方向图 + 一张“哪里像类器官”") + ar(7) +
+        node("mach", "m", "n9", 10, "后处理", "聚成轮廓", '<canvas id="kc" width="120" height="90"></canvas>', "像素沿箭头走 200 步，汇到同一点的归为一个") + ar(8) +
+        node("data", "l", "n10", 11, "关键结果", f"{P['s7_masks']['n']} 个类器官轮廓", f'<img src="{OVB["overlay"]}"><div style="position:absolute;right:4px;bottom:4px;width:44%;aspect-ratio:1/1;border:2px solid #fff;border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5)"><img src="{OVB["zoom"]}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><span style="position:absolute;left:3px;top:2px;font-size:9px;color:#fff;text-shadow:0 0 3px #000">局部放大</span></div>', f"每个类器官涂一种颜色、亮绿线是自动画出的轮廓；右下角是局部放大。人工数过 <b>{P['gt_instances']}</b> 个。分割到此结束。") + ar(9) +
+        node("mach", "m", "n11", 12, "分析 · 工具", "测量尺", f'<div style="position:absolute;inset:6px;display:flex;flex-direction:column;gap:3px;justify-content:center" id="mchips">{chip("面积 · 直径 · 周长")}{chip("圆度 · 实心度")}{chip("长宽比 · 贴边")}</div>', "纯几何计算，不猜") + ar(10) +
+        node("data", "l", "n12", 13, "结果", "一张表，每个类器官一行", tbl, f"单位像素；共 <b>{m8['n']}</b> 行（这里只列前 8 行），面积中位数 <b>{m8['summary']['area_median']:.0f} px²</b>"))
+ROW3 = (node("mach", "s", "n13", 14, "分析 · 检查", "质检员", f'<img id="qi" src="{P["s1_input"]["image"]}" style="transition:transform .5s">', f"翻转旋转 {q9['k']} 次再找一遍") + ar(11) +
+        node("data", "s", "n14", 15, "结果", "标出不可靠的", f'<img src="{QCB["overlay"]}"><div style="position:absolute;right:4px;bottom:4px;width:44%;aspect-ratio:1/1;border:2px solid #fff;border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5)"><img src="{QCB["zoom"]}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><span style="position:absolute;left:3px;top:2px;font-size:9px;color:#fff;text-shadow:0 0 3px #000">局部放大</span></div>', f"橙色 <b>{q9['n_low']}</b> 个不可靠（右下角放大）；其余绿色可靠，平均一致性 {q9['agreement_mean']:.2f}") + ar(12) +
+        node("mach", "m", "n15", 16, "分析 · 统计", "多张照片放一起比", f'<div style="position:absolute;inset:6px;display:flex;flex-direction:column;gap:3px;justify-content:center" id="schips">{chip("按组比较（检验 + 效应量）")}{chip("按时间连成生长曲线")}</div>', "示例：脑类器官 30 天") + ar(13) +
+        node("data", "s", "n16", 17, "结果", "曲线与比较", f'<img class="fit" src="{P["growth_png"]}">', "4 个克隆的面积变化") + ar(14) +
+        node("mach", "m", "n17", 18, "输出", "报告生成器", '<div style="position:absolute;inset:6px 14%;background:#F6F8F7;border-radius:3px;padding:5px;display:flex;flex-direction:column;gap:3px" id="doc"></div>', "写报告 + 记录权重/参数/版本") + ar(15) +
+        node("data", "l", "n18", 19, "最终结果", "报告 + 运行记录", f'<img src="{P["report_thumb"]}" style="object-fit:cover;object-position:top">', "report.html（双击可开）+ manifest.json（照片校验码、权重哈希、参数、版本），任何人可复现"))
 
 HTML = """<title>Orgalyst 平台演示</title>
 <style>__CSS____EXTRA__</style>
 <div class="wrap">
-<nav class="toc" aria-label="目录"><div class="k">目录</div><a href="#scene">平台场景动画</a><a href="#diff">训练目标：热扩散</a><a href="#diam">直径参数对照</a><a href="#notes">阅读说明</a></nav>
+<nav class="toc" aria-label="目录"><div class="k">目录</div><a href="#flow">全景流程</a><a href="#diam">补充：量错大小会怎样</a><a href="#notes">阅读说明</a></nav>
 <main>
 <header class="hd">
-  <div class="eyebrow">Orgalyst · 平台场景 · 2026-09-16</div>
-  <h1>一张类器官图在 Orgalyst 里走过的每一个部件</h1>
-  <p class="sub">舞台上摆着平台的每个部件，一枚数据令牌从用户的一句话出发，依次经过各部件；走到哪里，哪里就当场产出真实结果，右侧的运行目录同步留下记录。示例：OrgLine 肠类器官测试集一张 2048×2048 宽场图（人工标注 __GT__ 个）。</p>
+  <div class="eyebrow">Orgalyst · 一张照片的完整旅程 · 2026-09-16</div>
+  <h1>从一句话到一份报告：整条链路一次看全</h1>
+  <p class="sub">按序号 ①→⑲ 读：第一行从左到右，行尾向下，第二行从右到左，再向下，第三行从左到右。白色卡片是<b>东西</b>，绿色盒子是<b>处理它的模型或工具</b>；<b>大的是关键环节，小的是中间细节</b>。示例是一张真实的肠类器官显微照片，所有结果都来自这次真实运行。</p>
 </header>
-
-<section id="scene">
+<section id="flow">
 <div class="ctl"><button id="b-play" class="primary">暂停</button><button id="b-prev">上一步</button><button id="b-next">下一步</button><button id="b-restart">从头播放</button>
 <label class="small" style="display:flex;align-items:center;gap:6px">速度 <select id="spd" style="font:inherit;font-size:13px"><option value="1.6">慢</option><option value="1" selected>正常</option><option value="0.6">快</option></select></label><span class="small" id="stepno"></span></div>
+<div class="legend2"><span><i style="background:var(--paper);border:1.5px solid var(--rule)"></i>东西（数据）</span><span><i style="background:var(--accent-soft);border:2px solid var(--accent)"></i>模型 / 工具</span><span>大卡片 = 关键环节（照片、U-Net、轮廓、报告），小卡片 = 中间细节</span><span>箭头：左边的东西送进盒子，盒子另一边是得到的东西</span></div>
 <div class="bar"><i id="bar"></i></div>
-<div class="scenewrap"><div class="scene" id="scene">
-  <svg class="ring" viewBox="0 0 1000 760" preserveAspectRatio="none">
-    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" class="rhp"/></marker></defs>
-    <path class="seg" id="p0" d="M 500 100 C 500 120 90 110 90 138" marker-end="url(#ah)"/>
-    <path class="seg" id="p1" d="M 160 275 L 176 275" marker-end="url(#ah)"/>
-    <path class="seg" id="p2" d="M 640 275 L 656 275" marker-end="url(#ah)"/>
-    <path class="seg" id="p3" d="M 740 435 C 740 470 180 420 180 452" marker-end="url(#ah)"/>
-    <path class="seg" id="p4" d="M 340 640 L 356 640" marker-end="url(#ah)"/>
-    <path class="seg" id="p5" d="M 580 640 L 596 640" marker-end="url(#ah)"/>
-    <path class="seg" id="p6" d="M 820 640 L 836 640" marker-end="url(#ah)"/>
-  </svg>
-  <div class="zone z-agent" id="z-agent"><div class="zt"><span class="num">00</span>对话式助手</div><div class="bubble" id="bubble">你：</div><div class="plan" id="plan"><span class="chip">识别意图：单批图像形态分析</span><span class="chip">选工具：analyze_images</span><span class="chip">organ = intestine</span><span class="chip">pixel_size 未给 → 像素单位</span></div></div>
-  <div class="zone z-input" id="z-input"><div class="zt"><span class="num">01</span>输入</div><img class="thumb" id="in-img" alt="输入图"><div><span class="chip">__W__×__H__</span> <span class="chip">灰度</span> <span class="chip ok">器官：肠</span></div><div class="zsub">用户只提供图片与器官类型。人工标注（__GT__ 个）系统看不到。</div></div>
-  <div class="zone z-seg" id="z-seg"><div class="zt"><span class="num">02–05</span>分割 · Cellpose <span class="chip ok">肠专用权重</span> <span class="chip">直径：尺寸估计器</span></div>
-    <div class="slots">
-      <div class="slot" id="sl1"><canvas width="140" height="140"></canvas><div class="sl"><b>02 归一化·缩放</b>直径 __DIAM__ px → ×__SCALE__</div></div>
-      <div class="slot" id="sl2"><canvas width="140" height="140"></canvas><div class="sl"><b>03 切块 → U-Net</b>__NT__ 块 224²，重叠一半</div></div>
-      <div class="slot" id="sl3"><canvas width="140" height="140"></canvas><div class="sl"><b>04 三张输出图</b>流场 ×2 + 目标概率</div></div>
-      <div class="slot" id="sl4"><canvas width="140" height="140"></canvas><div class="sl"><b>05 阈值 → 追踪</b>像素沿箭头汇聚成实例</div></div>
-    </div>
-    <div class="zsub">架构与后处理未改；改的是权重（cyto3 → OrgLine 肠数据微调）和直径策略。</div></div>
-  <div class="zone z-mask" id="z-mask"><div class="zt"><span class="num">06</span>实例掩码</div><img class="thumb" id="mask-img" alt="掩码叠加" style="opacity:0;transition:opacity .6s"><div class="count" id="mask-n">—<small>个实例（人工标注 __GT__）</small></div><div class="zsub">放大回原尺寸；绿线为轮廓。</div></div>
-  <div class="zone z-trace" id="z-trace"><div class="zt"><span class="num">10</span>运行目录</div><div class="chip" id="runid">runs/analysis_…</div><div class="trace" id="trace"></div><div class="zsub">manifest.json：输入 MD5、权重哈希、参数、版本。任何人可据此复现。</div></div>
-  <div class="zone z-measure" id="z-measure"><div class="zt"><span class="num">07</span>形态测量 <span class="chip">regionprops</span></div><div class="tbl" id="tbl"></div><div class="zsub" id="msum">每个类器官一行；贴边实例汇总时排除。</div></div>
-  <div class="zone z-qc" id="z-qc"><div class="zt"><span class="num">08</span>质量控制</div><img class="thumb" id="qc-img" alt="质控叠加" style="opacity:0;transition:opacity .6s"><div class="metrics" id="qcm"></div><div class="zsub">橙色 = 翻转/旋转 __K__ 次重分割后不稳定的实例。</div></div>
-  <div class="zone z-out" id="z-out"><div class="zt"><span class="num">09</span>汇总 → 报告</div><img class="thumb" id="out-img" alt="汇总图" style="opacity:0;transition:opacity .6s"><div class="zsub" id="outsub">多图按分组/时间点汇总（示例：脑类器官 4 克隆生长曲线），再生成单文件报告。</div></div>
-  <div class="token" id="token"><img id="tok-img" alt=""><span id="tok-txt">请求</span></div>
+<div class="boardwrap"><div class="board" id="board">
+  <div class="rows">
+    <div class="rowl" id="r1">__ROW1__</div>
+    <div class="rowl rev" id="r2">__ROW2__</div>
+    <div class="rowl" id="r3">__ROW3__</div>
+  </div>
+  <div class="down" id="dn1">__DOWN__</div><div class="down" id="dn2">__DOWN__</div>
+  <div class="token" id="token"></div>
 </div></div>
-<div class="cap" id="cap">点「播放」开始</div>
+<div class="cap" id="cap">点「播放」开始；也可以直接按序号读图。</div>
 </section>
-
-<h2 id="diff">训练目标：从人工轮廓到流场（热扩散）</h2>
-<p>第 04 步网络输出的"流场"不需要人来标，它由人工画的轮廓用程序算出来：取轮廓内离边界最远的点作为中心，中心持续放热、热量只在轮廓内传播，迭代到稳定；温度场的梯度就是每个像素的箭头，全部指向中心。用热扩散而不是"直接指向质心"，是为了让弯曲、凹陷的形状也能从任何位置沿箭头走到内部。下面这个实例取自演示裁块中最不凸的一个类器官。</p>
-<div class="stage2">
-  <canvas id="cv-diff" width="__DW__" height="__DH__"></canvas>
-  <div><div class="ctl" style="margin:0 0 8px"><button id="b-diff-play">播放扩散</button><button id="b-diff-reset">重置</button></div>
-  <div class="legend"><b>颜色</b>：温度（对数刻度），亮为高。<br><b>箭头</b>：扩散完成后按温度梯度画出。<br><b>迭代</b>：按物体大小自适应（约外接框对角线的两倍），这里 __NIT__ 次。</div><div class="small" id="st-diff" style="margin-top:6px"></div></div>
-</div>
-
-<h2 id="diam">直径参数：给错会怎样</h2>
-<p>第 02 步的缩放系数由直径参数决定。同一裁块、同一个微调模型，只改直径：</p>
-<div class="grid3">
-  <figure><img src="__DI_S__"><figcaption><b>直径 12（偏小）</b>：图被放大，网络在放大后的图里找 30 px 的东西，大类器官被拆碎或丢失，得到 __DI_SN__ 个实例</figcaption></figure>
-  <figure><img src="__DI_A__"><figcaption><b>直径 __DI_AD__（尺寸估计器）</b>：__DI_AN__ 个实例，人工标注 35 个</figcaption></figure>
-  <figure><img src="__DI_L__"><figcaption><b>直径 150（偏大）</b>：图被缩得很小，所有类器官糊成一团，只得到 __DI_LN__ 个实例</figcaption></figure>
-</div>
-<p>脑类器官更极端：cyto3 自带的尺寸估计器在细胞图上训练，看到 400 px 的大团块猜出 __DB_AD__ px，按此放大十几倍后网络什么也找不到；把直径改成 404，同一套 cyto3 权重立刻分出来；微调后的脑专用权重把这个直径记在了模型里。</p>
-<div class="two"><div><img src="__RS_O__" alt="脑类器官原图" style="max-width:100%"><div class="small">脑类器官原图 __RS_OW__×__RS_OH__ px，目标约 404 px</div></div><div><img src="__RS_S__" width="__RS_SW3__" height="__RS_SH3__" alt="缩放后"><div class="small">按直径 404 缩放到目标 30 px 后：__RS_SW__×__RS_SH__ px（放大 3 倍显示）</div></div></div>
-<div class="grid3">
-  <figure><img src="__DB_A__"><figcaption><b>cyto3 零样本，自动直径 __DB_AD__</b>：__DB_AN__ 个实例</figcaption></figure>
-  <figure><img src="__DB_D__"><figcaption><b>cyto3 零样本，直径 404</b>：__DB_DN__ 个实例</figcaption></figure>
-  <figure><img src="__DB_F__"><figcaption><b>脑专用微调权重（自带直径 404）</b>：__DB_FN__ 个实例</figcaption></figure>
-</div>
-<p>这解释了 E1 里的三个现象：cyto3 零样本在脑上 AP50 只有 0.005、给对直径后到 0.63；联合四器官模型自带直径 183 px 对任何器官都不对；胰腺癌测试图里大小目标混在一起时召回只有一半。Orgalyst 按器官选直径策略：脑用两遍推理，肠和胰腺癌用尺寸估计器逐图估计，结肠用模型自带直径。</p>
-
-<h2 id="notes">阅读说明</h2>
-<p>舞台上 02 到 05 步是 Cellpose（Stringer 等，2021）的推理：按直径缩放、224 窗口切块、U-Net 输出流场与目标概率、阈值化后沿流场追踪聚成实例、过滤后放大回原尺寸。本项目未改动其架构与后处理，改的是权重与直径策略。06 步之后是 Orgalyst 加的确定性分析，全部不经过大模型；对话式助手只做 00 步：理解意图、选择工具与参数、事后解释结果。所有数字均来自本次真实运行；追踪一步的粒子为示意（只画部分像素，按网络输出的真实流场移动）。</p>
-<p class="small">参考：Stringer C 等，Cellpose: a generalist algorithm for cellular segmentation，Nat Methods 2021 · Stringer C, Pachitariu M，Cellpose3，Nat Methods 2025 · Pachitariu M 等，Cellpose-SAM，bioRxiv 2025。</p>
+<h2 id="diam">__TAIL__
 </main>
 </div>
 <script id="data" type="application/json">__DATA__</script>
-<script>
-const X=JSON.parse(document.getElementById('data').textContent),P=X.P;
-const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const $=s=>document.querySelector(s);
-function i8(b64){const s=atob(b64);const a=new Float32Array(s.length);for(let i=0;i<s.length;i++){let v=s.charCodeAt(i);if(v>127)v-=256;a[i]=v/127;}return a;}
-function u16(b64){const s=atob(b64);const a=new Uint16Array(s.length/2);for(let i=0;i<a.length;i++)a[i]=s.charCodeAt(2*i)|(s.charCodeAt(2*i+1)<<8);return a;}
-function bits(b64,n){const s=atob(b64);const a=new Uint8Array(n);for(let i=0;i<n;i++)a[i]=(s.charCodeAt(i>>3)>>(7-(i&7)))&1;return a;}
-const hsl=i=>'hsl('+((i*137.508)%360)+',65%,58%)';
-const img=src=>{const e=new Image();e.src=src;return e;};
-const IM={input:img(P.s1_input.image),norm:img(P.s2_rescale.image),small:img(P.s2_rescale.small),flow:img(P.s4_net.flow),prob:img(P.s4_net.prob),thresh:img(P.s5_thresh.image)};
-const N=512,dx=i8(P.s4_net.dx),dy=i8(P.s4_net.dy),cp=i8(P.s4_net.cellprob),mk=u16(P.s6_track.masks);
-$('#in-img').src=P.s1_input.image;$('#mask-img').src=P.s7_masks.overlay;$('#qc-img').src=P.s9_qc.overlay;$('#tok-img').src=P.s1_input.image;
-const runId='analysis_20260916_'+Math.random().toString(16).slice(2,8);$('#runid').textContent='runs/'+runId;
-/* ---- 舞台步骤 ---- */
-const Z=['z-agent','z-input','z-seg','z-mask','z-measure','z-qc','z-out','z-trace'];
-const TOK={ 'z-agent':[27,7],'z-input':[9,36],'z-seg':[41,36],'z-mask':[74,36],'z-measure':[18,79],'z-qc':[47,79],'z-out':[71,79],'z-trace':[91,56]};
-let anim=null,timers=[];
-function later(fn,ms){timers.push(setTimeout(fn,reduce?0:ms));}
-function clearAll(){cancelAnimationFrame(anim);timers.forEach(clearTimeout);timers=[];}
-function slotOn(k){for(let i=1;i<=4;i++){const s=$('#sl'+i);s.classList.toggle('on',i===k);s.classList.toggle('done',i<k);}}
-function cx(id){return $('#'+id+' canvas').getContext('2d');}
-function label(c,t){c.fillStyle='rgba(13,18,20,.85)';c.fillRect(0,124,140,16);c.fillStyle='#E3E9E6';c.font='10px ui-monospace,Menlo,monospace';c.fillText(t,4,135);}
-const SL={
- s1(inst){const c=cx('sl1'),sc=P.s2_rescale.scale;let k=0;cancelAnimationFrame(anim);const f=()=>{k=Math.min(1,k+((reduce||inst)?1:.03));const s=1-(1-sc)*k,w=140*s;c.fillStyle='#0d1214';c.fillRect(0,0,140,140);c.drawImage(IM.norm,(140-w)/2,(140-w)/2,w,w);c.strokeStyle='#3FB59F';c.setLineDash([3,3]);c.strokeRect((140-w)/2+.5,(140-w)/2+.5,w-1,w-1);c.setLineDash([]);label(c,'×'+s.toFixed(2));if(k<1)anim=requestAnimationFrame(f);};f();},
- s2(inst){const c=cx('sl2'),T=P.s3_tiles.tiles,sw=P.s2_rescale.small_size[0],f=140/sw;c.fillStyle='#0d1214';c.fillRect(0,0,140,140);c.drawImage(IM.small,0,0,140,140);let i=0;cancelAnimationFrame(anim);const g=()=>{for(let k=0;k<((reduce||inst)?T.length:2)&&i<T.length;k++,i++){const [x,y,w,h]=T[i];c.fillStyle='rgba(63,181,159,.12)';c.fillRect(x*f,y*f,w*f,h*f);c.strokeStyle='rgba(63,181,159,.9)';c.strokeRect(x*f+.5,y*f+.5,w*f-1,h*f-1);}label(c,i+'/'+T.length+' 块 → U-Net');if(i<T.length)anim=requestAnimationFrame(g);};g();},
- s3(inst){const c=cx('sl3');c.fillStyle='#0d1214';c.fillRect(0,0,140,140);let a=0;cancelAnimationFrame(anim);const f=()=>{a=Math.min(1,a+((reduce||inst)?1:.05));c.globalAlpha=a;c.drawImage(IM.flow,0,0,70,70);c.drawImage(IM.prob,70,0,70,70);c.drawImage(IM.thresh,0,70,70,70);c.drawImage(IM.input,70,70,70,70);c.globalAlpha=1;c.fillStyle='rgba(13,18,20,.7)';c.fillRect(0,0,140,12);c.fillStyle='#E3E9E6';c.font='9px ui-monospace';c.fillText('流场      目标概率',4,9);c.fillRect(0,70,0,0);label(c,'阈值 |  原图');if(a<1)anim=requestAnimationFrame(f);};f();},
- s4(inst){const c=cx('sl4'),parts=[];for(let y=2;y<N;y+=6)for(let x=2;x<N;x+=6){const i=y*N+x;if(cp[i]>0)parts.push({x:x+.5,y:y+.5,id:mk[i]});}let step=0;const STEPS=200,f=140/N;cancelAnimationFrame(anim);
-   const samp=(a,x,y)=>{const x0=Math.max(0,Math.min(N-2,x|0)),y0=Math.max(0,Math.min(N-2,y|0)),fx=x-x0,fy=y-y0;return a[y0*N+x0]*(1-fx)*(1-fy)+a[y0*N+x0+1]*fx*(1-fy)+a[(y0+1)*N+x0]*(1-fx)*fy+a[(y0+1)*N+x0+1]*fx*fy;};
-   const g=()=>{for(let k=0;k<((reduce||inst)?STEPS:6)&&step<STEPS;k++,step++)for(const p of parts){p.x=Math.max(0,Math.min(N-1,p.x+samp(dx,p.x,p.y)));p.y=Math.max(0,Math.min(N-1,p.y+samp(dy,p.x,p.y)));}
-     c.drawImage(IM.input,0,0,140,140);c.fillStyle='rgba(0,0,0,.6)';c.fillRect(0,0,140,140);const done=step>=STEPS;for(const p of parts){c.fillStyle=done?hsl(p.id||0):'#3FB59F';c.fillRect(p.x*f-.8,p.y*f-.8,1.6,1.6);}label(c,done?P.s6_track.n+' 个汇聚点':'步 '+step+'/'+STEPS);if(!done)anim=requestAnimationFrame(g);};g();}
-};
-function traceAdd(t){const d=document.createElement('div');d.className='tl';d.textContent=t;$('#trace').appendChild(d);requestAnimationFrame(()=>d.classList.add('in'));}
-function setTok(zone,txt,imgsrc){const [l,t]=TOK[zone];const e=$('#token');e.style.left=l+'%';e.style.top=t+'%';$('#tok-txt').textContent=txt;if(imgsrc)$('#tok-img').src=imgsrc;}
-function type(el,text,ms){el.textContent='你：';let i=0;const f=()=>{if(i<text.length){el.textContent='你：'+text.slice(0,++i);later(f,ms);}};f();}
-const cols=['编号','面积','直径','周长','圆度','实心','长宽比'];
-const STEPS=[
- {z:'z-agent',dur:5.2,end(){$('#bubble').textContent='你：分析这批肠类器官明场图，给我形态汇总和一份报告。';[...$('#plan').children].forEach(c=>c.classList.add('ok'));},cap:'00 · 用户一句话提出需求；助手识别任务类型、选择工具与参数，不看图也不算数。',run(){setTok('z-agent','请求');$('#bubble').textContent='你：';type($('#bubble'),'分析这批肠类器官明场图，给我形态汇总和一份报告。',45);[...$('#plan').children].forEach((c,i)=>later(()=>c.classList.add('ok'),2600+i*450));}},
- {z:'z-input',dur:3.2,end(){traceAdd('输入 '+P.source.slice(0,14)+'… md5 e3a1…9f2c');},cap:'01 · 图像进入流水线：'+P.shape[0]+'×'+P.shape[1]+' 灰度，器官类型来自用户声明。',arrow:'p0',run(){setTok('z-input','图像');later(()=>traceAdd('输入 '+P.source.slice(0,14)+'… md5 e3a1…9f2c'),900);}},
- {z:'z-seg',dur:4.6,end(){slotOn(1);SL.s1(true);traceAdd('直径 '+P.s2_rescale.diameter.toFixed(1)+' px（sizemodel）· 缩放 ×'+P.s2_rescale.scale.toFixed(2));},cap:'02 · 归一化到 1–99 百分位；尺寸估计器估出直径 '+P.s2_rescale.diameter.toFixed(0)+' px，把图缩到目标约 30 px（×'+P.s2_rescale.scale.toFixed(2)+'）。',arrow:'p1',run(){setTok('z-seg','图像');slotOn(1);SL.s1();later(()=>traceAdd('直径 '+P.s2_rescale.diameter.toFixed(1)+' px（sizemodel）· 缩放 ×'+P.s2_rescale.scale.toFixed(2)),1600);}},
- {z:'z-seg',dur:4.6,end(){slotOn(2);SL.s2(true);},cap:'03 · 缩放后的图按 224×224 切成 '+P.s3_tiles.n+' 块（重叠一半），逐块送入 U-Net。',run(){slotOn(2);SL.s2();}},
- {z:'z-seg',dur:4.4,end(){slotOn(3);SL.s3(true);traceAdd('权重 '+P.s10_manifest.model.slice(0,22)+'…');},cap:'04 · 每块得到三张图：水平流、垂直流（合成颜色图，色相=箭头方向）与目标概率；各块按中心高、边缘低的权重拼回整图。',run(){slotOn(3);SL.s3();later(()=>traceAdd('权重 '+P.s10_manifest.model.slice(0,22)+'…'),1200);}},
- {z:'z-seg',dur:5.6,end(){slotOn(4);SL.s4(true);},cap:'05 · 目标概率 > 0 的像素（'+(100*P.s5_thresh.frac).toFixed(1)+'%）沿流场箭头走约 200 步，同一类器官的像素汇聚到同一点 → '+P.s6_track.n+' 个实例。',run(){slotOn(4);SL.s4();}},
- {z:'z-mask',dur:4.0,end(){slotOn(5);$('#mask-img').style.opacity=1;$('#mask-n').firstChild.textContent=P.s7_masks.n;$('#tok-img').src=P.s7_masks.overlay;traceAdd('masks/*.png · '+P.s7_masks.n+' 实例');},cap:'06 · 过滤流场不一致的实例后放大回原尺寸：'+P.s7_masks.n+' 个实例（人工标注 '+P.gt_instances+'）。令牌从"图像"变成"掩码"。',arrow:'p2',run(){setTok('z-mask','掩码',P.s7_masks.overlay);slotOn(5);later(()=>{$('#mask-img').style.opacity=1;$('#mask-n').firstChild.textContent=P.s7_masks.n;},700);later(()=>traceAdd('masks/*.png · '+P.s7_masks.n+' 实例'),1500);}},
- {z:'z-measure',dur:5.4,end(){const t=$('#tbl');t.innerHTML='<table><tr class="in">'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+P.s8_measure.rows.slice(0,8).map(r=>'<tr class="in"><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td>'+r[5]+'</td><td>'+r[6]+'</td></tr>').join('')+'</table>';$('#msum').textContent='非贴边 '+P.s8_measure.summary.n+' 个 · 面积中位数 '+P.s8_measure.summary.area_median.toFixed(0)+' px² · 直径中位数 '+P.s8_measure.summary.diam_median.toFixed(1)+' px · 圆度 '+P.s8_measure.summary.circ_median.toFixed(3);traceAdd('tables/features.csv · '+P.s8_measure.n+' 行');},cap:'07 · 对每个实例计算面积、等效直径、周长、圆度、实心度、长宽比；贴边实例在汇总时排除（'+P.s8_measure.summary.border_excluded+' 个）。',arrow:'p3',run(){setTok('z-measure','特征表');const t=$('#tbl');t.innerHTML='<table><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+P.s8_measure.rows.slice(0,8).map(r=>'<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td><td>'+r[5]+'</td><td>'+r[6]+'</td></tr>').join('')+'</table>';[...t.querySelectorAll('tr')].forEach((tr,i)=>later(()=>tr.classList.add('in'),300+i*220));later(()=>{$('#msum').textContent='非贴边 '+P.s8_measure.summary.n+' 个 · 面积中位数 '+P.s8_measure.summary.area_median.toFixed(0)+' px² · 直径中位数 '+P.s8_measure.summary.diam_median.toFixed(1)+' px · 圆度 '+P.s8_measure.summary.circ_median.toFixed(3);traceAdd('tables/features.csv · '+P.s8_measure.n+' 行');},2600);}},
- {z:'z-qc',dur:4.6,end(){$('#qc-img').style.opacity=1;const m=P.s9_qc;$('#qcm').innerHTML=[['失焦分数',m.focus.toFixed(3)],['光照不均',m.illum.toFixed(3)],['饱和像素',(100*m.sat).toFixed(1)+'%'],['一致性均值',m.agreement_mean.toFixed(2)],['低可信实例',m.n_low+' 个']].map(([k,v])=>'<div>'+k+' <b>'+v+'</b></div>').join('');traceAdd('tables/qc.csv · 低可信 '+m.n_low);},cap:'08 · 图像级：失焦、光照不均、饱和像素；实例级：翻转/旋转 '+P.s9_qc.k+' 次重分割，不稳定的实例记为低可信（橙色）。',arrow:'p4',run(){setTok('z-qc','特征表');later(()=>$('#qc-img').style.opacity=1,500);const m=P.s9_qc;$('#qcm').innerHTML='';[['失焦分数',m.focus.toFixed(3)],['光照不均',m.illum.toFixed(3)],['饱和像素',(100*m.sat).toFixed(1)+'%'],['一致性均值',m.agreement_mean.toFixed(2)],['低可信实例',m.n_low+' 个']].forEach(([k,v],i)=>later(()=>{const d=document.createElement('div');d.innerHTML=k+' <b>'+v+'</b>';$('#qcm').appendChild(d);},900+i*300));later(()=>traceAdd('tables/qc.csv · 低可信 '+m.n_low),2600);}},
- {z:'z-out',dur:5.0,end(){const o=$('#out-img');o.src=P.report_thumb;o.style.opacity=1;$('#outsub').textContent='report.html：概览、逐图表、分布图、叠加图、方法学模板、溯源表。';traceAdd('growth.html · report.html');},cap:'09 · 多张图按分组或时间点汇总（示例：脑类器官 4 个克隆 30 天的生长曲线），再把全部内容渲染成单文件报告。',arrow:'p5',run(){setTok('z-out','报告');const o=$('#out-img');o.src=P.growth_png;later(()=>o.style.opacity=1,400);later(()=>{o.style.opacity=0;},2300);later(()=>{o.src=P.report_thumb;o.style.opacity=1;$('#outsub').textContent='report.html：概览、逐图表、分布图、叠加图、方法学模板、溯源表。';},2800);later(()=>traceAdd('growth.html · report.html'),3400);}},
- {z:'z-trace',dur:4.2,end(){traceAdd('manifest.json ✓ versions: cellpose 3.1.1.3 · torch 2.14+cu130');},cap:'10 · 全部产物落在一个运行目录；manifest.json 记录输入哈希、权重哈希、参数与版本。助手据此向用户汇报，并可回答追问。',arrow:'p6',run(){setTok('z-trace','完成');later(()=>traceAdd('manifest.json ✓ versions: cellpose 3.1.1.3 · torch 2.14+cu130'),800);}},
-];
-let cur=-1,playing=!reduce,t0=0,speed=1,raf=null;
-function reset(){clearAll();Z.forEach(z=>{const e=$('#'+z);e.classList.remove('on','done');e.classList.add('idle');});document.querySelectorAll('.seg').forEach(p=>p.classList.remove('on','done'));$('#trace').innerHTML='';$('#tbl').innerHTML='';$('#qcm').innerHTML='';$('#mask-img').style.opacity=0;$('#qc-img').style.opacity=0;$('#out-img').style.opacity=0;$('#mask-n').firstChild.textContent='—';$('#msum').textContent='每个类器官一行；贴边实例汇总时排除。';$('#outsub').textContent='多图按分组/时间点汇总（示例：脑类器官 4 克隆生长曲线），再生成单文件报告。';[...$('#plan').children].forEach(c=>c.classList.remove('ok'));$('#bubble').textContent='你：';slotOn(0);for(let i=1;i<=4;i++){const c=cx('sl'+i);c.fillStyle='#0d1214';c.fillRect(0,0,140,140);}$('#tok-img').src=P.s1_input.image;}
-function go(i){clearAll();reset();for(let k=0;k<i;k++)STEPS[k].end&&STEPS[k].end();cur=i;const s=STEPS[i];Z.forEach(z=>{const e=$('#'+z);e.classList.remove('on');e.classList.toggle('done',Z.indexOf(z)<Z.indexOf(s.z));e.classList.toggle('idle',Z.indexOf(z)>Z.indexOf(s.z));});$('#'+s.z).classList.add('on');$('#'+s.z).classList.remove('idle');
-  document.querySelectorAll('.seg').forEach(p=>{p.classList.remove('on');});if(s.arrow){const p=$('#'+s.arrow);p.classList.add('on');later(()=>{p.classList.remove('on');p.classList.add('done');},1000);}
-  $('#cap').textContent=s.cap;$('#stepno').textContent='第 '+(i+1)+' / '+STEPS.length+' 步';s.run();t0=performance.now();}
-function tick(){if(!playing)return;const e=performance.now()-t0,d=STEPS[cur].dur*1000*speed;$('#bar').style.width=Math.min(100,100*e/d)+'%';if(e>=d){if(cur<STEPS.length-1)go(cur+1);else{playing=false;$('#b-play').textContent='播放';return;}}raf=requestAnimationFrame(tick);}
-function start(){cancelAnimationFrame(raf);t0=performance.now();raf=requestAnimationFrame(tick);}
-$('#b-play').onclick=function(){playing=!playing;this.textContent=playing?'暂停':'播放';if(playing){if(cur<0||cur>=STEPS.length-1){go(0);}start();}else cancelAnimationFrame(raf);};
-$('#b-prev').onclick=()=>{if(cur>0){go(cur-1);if(playing)start();}};
-$('#b-next').onclick=()=>{if(cur<STEPS.length-1){go(cur+1);if(playing)start();}};
-$('#b-restart').onclick=()=>{playing=true;$('#b-play').textContent='暂停';go(0);start();};
-$('#spd').onchange=e=>{speed=parseFloat(e.target.value);};
-let loaded=0;Object.values(IM).forEach(e=>{e.onload=()=>{if(++loaded===Object.keys(IM).length){go(0);if(playing)start();else $('#b-play').textContent='播放';}};});
-/* ---- 热扩散 ---- */
-(function(){const df=X.diffusion,W=df.w,H=df.h,m=bits(df.mask,W*H),cv=$('#cv-diff'),ctx=cv.getContext('2d'),S=4,NIT=Math.min(400,2*Math.round(Math.hypot(W,H)));let T=new Float32Array(W*H),it=0,timer=null;const cy=df.center[0],cx0=df.center[1];
- function step(){const Nn=new Float32Array(W*H);for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=y*W+x;if(!m[i])continue;let s=0,c=0;for(let dy=-1;dy<=1;dy++)for(let dx2=-1;dx2<=1;dx2++){const yy=y+dy,xx=x+dx2;if(yy<0||yy>=H||xx<0||xx>=W)continue;const j=yy*W+xx;if(m[j]){s+=T[j];c++;}}Nn[i]=s/c;}Nn[cy*W+cx0]+=1;T=Nn;it++;}
- function draw(arrows){const im=ctx.createImageData(W,H),mx=Math.log1p(Math.max(...T))||1;for(let i=0;i<W*H;i++){const o=i*4;if(!m[i]){im.data[o]=20;im.data[o+1]=26;im.data[o+2]=28;im.data[o+3]=255;continue;}const v=Math.log1p(T[i])/mx,t=Math.pow(v,1.3);im.data[o]=Math.round(t<.5?22+30*t*2:52+203*(t-.5)*2);im.data[o+1]=Math.round(t<.5?70+110*t*2:180+75*(t-.5)*2);im.data[o+2]=Math.round(t<.5?66+64*t*2:130+125*(t-.5)*2);im.data[o+3]=255;}
-  const off=document.createElement('canvas');off.width=W;off.height=H;off.getContext('2d').putImageData(im,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(off,0,0,W*S,H*S);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc((cx0+.5)*S,(cy+.5)*S,3,0,7);ctx.fill();
-  if(arrows){ctx.strokeStyle='#fff';ctx.lineWidth=1.2;for(let y=3;y<H-3;y+=6)for(let x=3;x<W-3;x+=6){const i=y*W+x;if(!m[i])continue;const gx=(m[i+1]?T[i+1]:T[i])-(m[i-1]?T[i-1]:T[i]),gy=(m[i+W]?T[i+W]:T[i])-(m[i-W]?T[i-W]:T[i]),n=Math.hypot(gx,gy);if(n<1e-9)continue;const ux=gx/n,uy=gy/n,x0=(x+.5)*S,y0=(y+.5)*S,L=9;ctx.beginPath();ctx.moveTo(x0-ux*L/2,y0-uy*L/2);ctx.lineTo(x0+ux*L/2,y0+uy*L/2);ctx.stroke();ctx.beginPath();ctx.moveTo(x0+ux*L/2,y0+uy*L/2);ctx.lineTo(x0+ux*L/2-ux*3-uy*2.5,y0+uy*L/2-uy*3+ux*2.5);ctx.moveTo(x0+ux*L/2,y0+uy*L/2);ctx.lineTo(x0+ux*L/2-ux*3+uy*2.5,y0+uy*L/2-uy*3-ux*2.5);ctx.stroke();}}
-  $('#st-diff').textContent='迭代 '+it+' / '+NIT+(arrows?' · 已画出梯度箭头':'');}
- function rst(){clearInterval(timer);timer=null;T=new Float32Array(W*H);it=0;draw(false);}
- $('#b-diff-play').onclick=()=>{if(timer)return;if(it>=NIT)rst();const per=reduce?NIT:4;timer=setInterval(()=>{for(let k=0;k<per&&it<NIT;k++)step();draw(it>=NIT);if(it>=NIT){clearInterval(timer);timer=null;}},30);};
- $('#b-diff-reset').onclick=rst;rst();})();
+<script>__JS__
+function placeDown(){const b=board.getBoundingClientRect();const r1=$('#r1').getBoundingClientRect(),r2=$('#r2').getBoundingClientRect(),r3=$('#r3').getBoundingClientRect();const n6=$('#n6').getBoundingClientRect(),n12=$('#n12').getBoundingClientRect();
+  const d1=$('#dn1'),d2=$('#dn2');d1.style.left=(n6.left-b.left+n6.width/2-22)+'px';d1.style.top=(r1.bottom-b.top-2)+'px';d2.style.left=(n12.left-b.left+n12.width/2-22)+'px';d2.style.top=(r2.bottom-b.top-2)+'px';}
+window.addEventListener('resize',placeDown);setTimeout(placeDown,100);setTimeout(placeDown,800);
+const _go=go;go=function(i){_go(i);placeDown();$('#dn1').classList.toggle('on',i===7);$('#dn2').classList.toggle('on',i===13);};
 </script>
 """
-rep = {"__CSS__": CSS, "__EXTRA__": EXTRA, "__DATA__": DATA, "__GT__": str(P["gt_instances"]), "__W__": str(P["shape"][0]), "__H__": str(P["shape"][1]),
-       "__DIAM__": f"{r2['diameter']:.0f}", "__SCALE__": f"{r2['scale']:.2f}", "__NT__": str(t3["n"]), "__K__": str(q9["k"]),
-       "__DW__": str(df["w"] * 4), "__DH__": str(df["h"] * 4), "__NIT__": str(min(400, 2 * round((df["w"] ** 2 + df["h"] ** 2) ** 0.5))),
-       "__DI_S__": di["small"]["image"], "__DI_SN__": str(di["small"]["n"]), "__DI_A__": di["auto"]["image"], "__DI_AD__": f"{di['auto']['diameter']:.1f}", "__DI_AN__": str(di["auto"]["n"]),
+JS2 = JS.replace("$('#w1').classList.toggle('on',i===7);$('#w2').classList.toggle('on',i===13);", "")
+JS2 = JS2.replace("function go(i){", "var go=function(i){").replace("$('#cap').textContent=NODES[i].cap;", "$('#cap').textContent=NODES[i].cap;")
+rep = {"__CSS__": CSS, "__EXTRA__": EXTRA, "__DATA__": DATA, "__ROW1__": ROW1, "__ROW2__": ROW2, "__ROW3__": ROW3, "__DOWN__": DOWN, "__WID__": wid, "__TAIL__": TAIL, "__JS__": JS2, 
+       "__GT__": str(P["gt_instances"]), "__DW__": str(df["w"] * 4), "__DH__": str(df["h"] * 4), "__NIT__": str(min(400, 2 * round((df["w"] ** 2 + df["h"] ** 2) ** 0.5))),
+       "__DI_S__": di["small"]["image"], "__DI_SN__": str(di["small"]["n"]), "__DI_A__": di["auto"]["image"], "__DI_AD__": f"{di['auto']['diameter']:.0f}", "__DI_AN__": str(di["auto"]["n"]),
        "__DI_L__": di["large"]["image"], "__DI_LN__": str(di["large"]["n"]),
        "__DB_A__": db["auto"]["image"], "__DB_AD__": f"{db['auto']['diameter']:.0f}", "__DB_AN__": str(db["auto"]["n"]), "__DB_D__": db["d404"]["image"], "__DB_DN__": str(db["d404"]["n"]), "__DB_F__": db["finetuned"]["image"], "__DB_FN__": str(db["finetuned"]["n"]),
        "__RS_O__": rs["original"], "__RS_OW__": str(rs["original_size"][0]), "__RS_OH__": str(rs["original_size"][1]), "__RS_S__": rs["scaled"], "__RS_SW__": str(rs["scaled_size"][0]), "__RS_SH__": str(rs["scaled_size"][1]), "__RS_SW3__": str(rs["scaled_size"][0] * 3), "__RS_SH3__": str(rs["scaled_size"][1] * 3)}
 html = HTML
-for k, v in rep.items(): html = html.replace(k, v)
-assert "__" not in html.replace("__proto__", ""), [w for w in set(__import__("re").findall(r"__[A-Z_0-9]+__", html))]
-open(f"{S}/orgalyst_scene.html", "w", encoding="utf-8").write(html); print("written", len(html) // 1024, "KB")
+for _ in range(2):
+    for k, v in rep.items(): html = html.replace(k, v)
+left = set(re.findall(r"__[A-Z_0-9]+__", html)); assert not left, left
+open(f"{D}/orgalyst_scene.html", "w", encoding="utf-8").write(html); print("written", f"{D}/orgalyst_scene.html", len(html) // 1024, "KB")

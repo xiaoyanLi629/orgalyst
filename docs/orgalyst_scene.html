@@ -260,5 +260,4 @@ function placeDown(){const b=board.getBoundingClientRect();const r1=$('#r1').get
   const d1=$('#dn1'),d2=$('#dn2');d1.style.left=(n6.left-b.left+n6.width/2-22)+'px';d1.style.top=(r1.bottom-b.top-2)+'px';d2.style.left=(n12.left-b.left+n12.width/2-22)+'px';d2.style.top=(r2.bottom-b.top-2)+'px';}
 window.addEventListener('resize',placeDown);setTimeout(placeDown,100);setTimeout(placeDown,800);
 const _go=go;go=function(i){_go(i);placeDown();$('#dn1').classList.toggle('on',i===7);$('#dn2').classList.toggle('on',i===13);};
-/* ---- 热扩散 ---- */")[1].split("
 </script>

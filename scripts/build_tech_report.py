@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""生成技术报告 docs/technical_report.html（单文件、内嵌图、沿用 design.html 样式）。数字尽量从 results/*.json 读。"""
+"""生成技术报告 docs/technical_report.html（单文件、内嵌图、沿用 design.html 样式）。所有数字从 results/*.json 读，图来自 results/ 与 docs/assets/。
+PDF：用 Chrome 打印（A4、背景色、页边 16 mm）即得 docs/technical_report.pdf。"""
 import base64, json, glob, os, io
-S = "/private/tmp/claude-501/-Users-xiaoyanli/0850d9a1-4ef3-4938-beed-610f045d4857/scratchpad"
-R = f"{S}/rep/results"
+HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
+R = f"{ROOT}/results"; D = f"{ROOT}/docs"; A = f"{D}/assets"; S = A
 def J(p): return json.load(open(p, encoding="utf-8"))
 def img(path, mime=None):
     if path.startswith("data:"): return path
@@ -12,10 +13,10 @@ def shrink(path, w=900, q=82):
     from PIL import Image
     im = Image.open(path); im.thumbnail((w, w * 2)); buf = io.BytesIO(); im.convert("RGB").save(buf, "JPEG", quality=q)
     return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
-h = open(f"{S}/design.html", encoding="utf-8").read(); CSS = h[h.find("<style>") + 7:h.find("</style>")]
-summ = J(f"{S}/rep/summary.json"); e3 = J(f"{R}/e3_brain_consistency.json"); e3m = J(f"{R}/e3_brain_consistency_model.json")
+h = open(f"{D}/design.html", encoding="utf-8").read(); CSS = h[h.find("<style>") + 7:h.find("</style>")]
+summ = J(f"{D}/dataset_summary.json"); e3 = J(f"{R}/e3_brain_consistency.json"); e3m = J(f"{R}/e3_brain_consistency_model.json")
 e2 = {n: J(f"{R}/e2_det_{n}_test.json") for n in ("all", "intestine", "brain", "lung")}; cal = J(f"{R}/e2_conf_calibration.json")
-e5 = J(f"{S}/e5_claude.json"); P = J(f"{S}/pipeline_demo_data.json"); C = J(f"{S}/cellpose_demo_data.json")
+e5 = J(f"{R}/e5_agent_tasks_claude.json"); P = J(f"{D}/pipeline_demo_data.json"); C = J(f"{D}/cellpose_demo_data.json")
 OVB = J(f"{S}/overlay_bold.json"); QCB = J(f"{S}/qc_bold.json")
 def ap(tag):
     fs = glob.glob(f"{R}/{tag}.summary.json")
@@ -71,7 +72,7 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <h2 id="s4">4 方法与系统</h2>
 <h3>4.1 总体架构</h3>
 <p>系统分两层。<b>工具包层</b> <code>orgalyst</code> 是一个普通的 Python 包，命令行入口 <code>python -m orgalyst analyze | count | track | report</code>，不需要任何大模型；它的每一次运行都在一个目录里留下 <code>manifest.json</code>（输入文件的 md5、模型标识与权重哈希、全部参数、numpy / torch / cellpose / ultralytics 版本、GPU 型号、逐步日志）、<code>tables/</code>（逐实例特征表、汇总、质控、比较、生长表）、<code>masks/</code>、<code>overlays/</code> 和一份单文件 <code>report.html</code>。<b>助手层</b>是我们此前为实验室搭建的 BioAgent（Claude Agent SDK + 权限门卫 + 终端与网页两种界面）的精简副本，工具包通过一个 MCP 服务器（<code>orgalyst/mcp_server.py</code>，stdio 传输）暴露六个工具：<code>list_models</code>、<code>analyze_images</code>、<code>count_organoids</code>、<code>compare_groups</code>、<code>growth_curves</code>、<code>run_summary</code>（以及 <code>list_runs</code>）。助手的系统提示里写明了什么时候用哪个工具、回答时必须区分像素与微米、贴边实例默认排除等约定；助手不看图、不算数，只做需求理解、参数选择和结果解释。</p>
-<figure><img src="{shrink(f'{S}/ov2_board.png', 1400, 80)}"><figcaption><b>图 1 · 一张肠类器官照片的完整旅程。</b>白卡片是数据，绿盒子是模型或工具，大卡片是关键环节。从"一句话"到助手选工具，再到量大小、缩放、切块、U-Net（装着肠专用权重）、三张输出图、聚成轮廓、146 个类器官轮廓、测量表、质检、统计、报告生成器，最后是报告加运行记录。交互版见 docs/orgalyst_scene.html。</figcaption></figure>
+<figure><img src="{shrink(f'{A}/overview_board.png', 1400, 80)}"><figcaption><b>图 1 · 一张肠类器官照片的完整旅程。</b>白卡片是数据，绿盒子是模型或工具，大卡片是关键环节。从"一句话"到助手选工具，再到量大小、缩放、切块、U-Net（装着肠专用权重）、三张输出图、聚成轮廓、146 个类器官轮廓、测量表、质检、统计、报告生成器，最后是报告加运行记录。交互版见 docs/orgalyst_scene.html。</figcaption></figure>
 
 <h3>4.2 分割：Cellpose 架构与按器官的专用权重</h3>
 <p>分割用 Cellpose（Stringer 等，Nature Methods 2021）。它的核心不是某种特定的网络，而是把"实例分割"改写成"回归一个流场"：训练时对每个人工标注的实例做一次以中心为热源的热扩散，得到每个像素指向所属实例中心的方向；网络（一个带残差块和跳跃连接的 U-Net）学习预测这两张方向图和一张"是不是目标"的概率图；推理时把每个前景像素沿方向图迭代移动约 200 步，汇聚到同一点的像素归为同一个实例。这个设计让它天然能处理粘连、非凸和大小悬殊的目标，也让"换骨干网络"成为可能，Cellpose-SAM 就是同一团队 2025 年把骨干换成 ViT 的版本。</p>
@@ -96,7 +97,7 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <h3>4.6 使用流程与产物</h3>
 <p>一次典型的使用是这样的。实验人员在网页版或终端里说"分析 /data/exp3 下的 4 张肠类器官照片，做形态分析并生成报告"。助手先列出计划（确认器官与像素尺寸、调用分析工具、读汇总、写回答），然后调用 <code>analyze_images(images="/data/exp3", organ="intestine", name="exp3")</code>；工具包在几十秒内完成分割、测量与报告生成，把 run_dir 和汇总返回给助手；助手把总数、逐图数量、面积与圆度的中位数和四分位范围整理成表，并给出报告路径。E5 任务集里助手对这一任务的回答结尾如下（原文节选），它主动说明了单位、指出了没有编造像素尺寸、提示用户先看叠加图核对分割质量，并且明确"201 这个数是模型输出、没有精度保证"，这正是我们希望助手具备的分寸：</p>
 <blockquote class="small" style="border-left:3px solid var(--rule);margin:8px 0 14px;padding:6px 14px;color:var(--muted)">"注意：所有尺寸都是像素单位，不是微米。你没有提供 pixel_size_um，我也没有编造标定值。……建议你先翻一下 overlays/ 里的 4 张叠加图。这次用的是肠专用模型，但在没有人工标注做金标准的前提下，201 这个数仍然只是模型输出、没有精度保证。"</blockquote>
-<figure><img src="{img(f'{S}/report_thumb_small.jpg')}"><figcaption><b>图 4c · 工具包生成的单文件报告 report.html（脑类器官示例）。</b>依次为概览瓦片（数量、面积 / 直径 / 圆度中位数）、逐图表、分布直方图、叠加缩略图、方法学模板段落（模型、直径策略、排除规则）与溯源表（输入哈希、权重哈希、版本）。报告不依赖网络，双击即可打开，可直接附进实验记录。</figcaption></figure>
+<figure><img src="{img(f'{A}/report_thumb_small.jpg')}"><figcaption><b>图 4c · 工具包生成的单文件报告 report.html（脑类器官示例）。</b>依次为概览瓦片（数量、面积 / 直径 / 圆度中位数）、逐图表、分布直方图、叠加缩略图、方法学模板段落（模型、直径策略、排除规则）与溯源表（输入哈希、权重哈希、版本）。报告不依赖网络，双击即可打开，可直接附进实验记录。</figcaption></figure>
 <h2 id="s5">5 实现细节</h2>
 <p>硬件为一台 AutoDL 云主机（NVIDIA RTX 5090 D，32 GB 显存；容器内存上限 62 GB），软件为 Python 3.10、torch 2.14.0+cu130、cellpose 3.1.1.3、ultralytics 8.4.152、numpy 2.0.2、scikit-image 0.25。分割微调：cyto3 初始化，按器官各训练 200 轮，学习率 0.1（Cellpose 默认 SGD），批大小 8，耗时脑 74 分钟、pdac 31 分钟、肠 22 分钟、结肠 1.4 分钟；跨器官实验每器官最多取 500 张训练图（四器官全量 2395 张会超出容器内存被静默杀掉，这是我们踩过的坑之一）。检测：yolo11m.pt 初始化，输入 1024，批 8，100 轮，单器官 32 到 65 分钟，联合模型 126 分钟。Cellpose-SAM 对照在独立的 cellpose 4 环境里跑，batch 2、学习率 1e-5、100 轮，pdac 96 分钟、肠 25 分钟。推理速度（单张 2048² 图）：分割约 1.5 秒，质控（4 次增强）约 6 秒，检测计数 0.3 秒。</p>
 <p>MCP 接口以 FastMCP 实现，工具签名如下（全部参数都有默认值，返回 JSON）：<code>analyze_images(images, organ="generic", pixel_size_um=None, name, diam_mode=None, limit=0, make_report=True, qc=False, meta_csv=None)</code>；<code>count_organoids(images, organ="generic", name, conf=None, limit=0)</code>；<code>compare_groups(run_dir, groups, metrics=None, exclude_border=True)</code>；<code>growth_curves(run_dir, meta_csv=None, pattern=None, metric=None)</code>；<code>run_summary(run_dir)</code>；<code>list_models()</code>；<code>list_runs(limit=20)</code>。MCP 服务器启动时把 stdout 改道到 stderr，只留一个私有句柄给协议流，避免底层库的打印污染协议，这是我们在接入 Biomni 工具库时总结出的做法。</p>
@@ -125,7 +126,7 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <tr><td>model（固定训练直径）</td><td class="n">{e3m['n_detected']} / {e3m['n_missed']}</td><td class="n">{f(e3m['pearson_r'])}</td><td class="n">{f(e3m['spearman_rho'])}</td><td class="n">{f(e3m['median_ratio'])}</td><td class="n">{e3m['median_ape']*100:.1f}%</td><td class="n">{e3m['within_10pct']*100:.0f}%</td><td class="n">{e3m['within_20pct']*100:.0f}%</td><td class="n">{e3m['frac_ratio_gt_1_5']*100:.1f}%</td></tr>
 <tr><td><b>refine（系统默认）</b></td><td class="n">{e3['n_detected']} / {e3['n_missed']}</td><td class="n">{f(e3['pearson_r'])}</td><td class="n">{f(e3['spearman_rho'])}</td><td class="n">{f(e3['median_ratio'])}</td><td class="n">{e3['median_ape']*100:.1f}%</td><td class="n">{e3['within_10pct']*100:.0f}%</td><td class="n">{e3['within_20pct']*100:.0f}%</td><td class="n">{e3['frac_ratio_gt_1_5']*100:.1f}%</td></tr></table></div>
 <p class="small">表 3 · E3 自动面积 vs 专家标注面积，brain test 240 图。</p>
-<div class="fig2"><figure><img src="{shrink(f'{S}/e3_brain_consistency.png', 900)}"><figcaption><b>图 5 · 自动面积与专家面积的散点与 Bland-Altman 图（refine）。</b>残余失败集中在第 2 天最小的类器官（4 张，高估 4 到 7 倍，第一遍推理把培养基背景当成了目标）和一张第 30 天最大的类器官（低估约一半）。</figcaption></figure><figure><img src="{shrink(f'{S}/growth_brain_test.png', 900)}"><figcaption><b>图 6 · 四个克隆的面积生长曲线。</b>由同一批 240 张图的分析结果按文件名解析出个体、克隆与时间点后自动生成，细线为个体，粗线为组均值。</figcaption></figure></div>
+<div class="fig2"><figure><img src="{shrink(f'{R}/e3_brain_consistency.png', 900)}"><figcaption><b>图 5 · 自动面积与专家面积的散点与 Bland-Altman 图（refine）。</b>残余失败集中在第 2 天最小的类器官（4 张，高估 4 到 7 倍，第一遍推理把培养基背景当成了目标）和一张第 30 天最大的类器官（低估约一半）。</figcaption></figure><figure><img src="{shrink(f'{A}/growth_brain_test.png', 900)}"><figcaption><b>图 6 · 四个克隆的面积生长曲线。</b>由同一批 240 张图的分析结果按文件名解析出个体、克隆与时间点后自动生成，细线为个体，粗线为组均值。</figcaption></figure></div>
 
 <h3>6.4 E4 质控的作用</h3>
 <p>质控模块的价值在于把错误"标出来"而不是"消掉"。在肠类器官示例图上，120 个实例的翻转旋转一致性平均 0.98，只有 1 个被标为低可信，它正是图像角落一个被截断的团块；在 E5 的质控任务里，4 张肠图 205 个实例中有 3 个被标出。我们没有在全测试集上系统评估质控标记与分割错误的对应关系，这是未完成的工作（第 7 节）。</p>
@@ -173,5 +174,5 @@ def _curly(html):
         out.append(_re.sub(r'"', rep, seg))
     return "".join(out)
 head, body = HTML.split("</style>", 1); HTML = head + "</style>" + _curly(body)
-out = f"{S}/technical_report.html"; open(out, "w", encoding="utf-8").write(HTML)
+out = f"{D}/technical_report.html"; open(out, "w", encoding="utf-8").write(HTML)
 import re; txt = re.sub(r"<[^>]+>", "", HTML); print("written", len(HTML) // 1024, "KB; text chars", len(re.sub(r"\s", "", txt)))

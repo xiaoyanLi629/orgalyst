@@ -1,0 +1,283 @@
+{
+  "seg/intestine/train": {
+    "images": 184,
+    "instances": 11977,
+    "sizes": [
+      "1024x1024",
+      "2048x2048",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 160,
+      "rgb_identical->gray": 24
+    }
+  },
+  "seg/intestine/val": {
+    "images": 35,
+    "instances": 2551,
+    "sizes": [
+      "1024x1024",
+      "2048x2048",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 30,
+      "rgb_identical->gray": 5
+    }
+  },
+  "seg/intestine/test": {
+    "images": 12,
+    "instances": 973,
+    "sizes": [
+      "1024x1024",
+      "2048x2048",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 11,
+      "rgb_identical->gray": 1
+    }
+  },
+  "seg/pdac/train": {
+    "images": 765,
+    "instances": 52281,
+    "sizes": [
+      "1024x1022",
+      "1024x1024",
+      "1200x1200",
+      "2048x2044",
+      "512x512",
+      "550x550",
+      "641x640",
+      "800x800"
+    ],
+    "conversions": {
+      "gray": 743,
+      "rgb_identical->gray": 9,
+      "gray16->8": 13
+    }
+  },
+  "seg/pdac/val": {
+    "images": 193,
+    "instances": 12296,
+    "sizes": [
+      "1024x1022",
+      "1024x1024",
+      "2048x2044",
+      "653x653",
+      "714x654",
+      "800x800",
+      "902x902"
+    ],
+    "conversions": {
+      "rgb_identical->gray": 6,
+      "gray": 186,
+      "gray16->8": 1
+    }
+  },
+  "seg/pdac/test": {
+    "images": 20,
+    "instances": 10268,
+    "sizes": [
+      "1024x1022",
+      "1050x1050",
+      "1408x1040",
+      "1672x1528",
+      "2048x2044",
+      "512x512",
+      "750x750"
+    ],
+    "conversions": {
+      "rgb_identical->gray": 11,
+      "gray16->8": 9
+    }
+  },
+  "seg/brain/train": {
+    "images": 1431,
+    "instances": 1431,
+    "sizes": [
+      "1024x768",
+      "1388x1040"
+    ],
+    "conversions": {
+      "rgb": 847,
+      "gray": 571,
+      "rgb_identical->gray": 13
+    }
+  },
+  "seg/brain/val": {
+    "images": 186,
+    "instances": 186,
+    "sizes": [
+      "1024x768"
+    ],
+    "conversions": {
+      "rgb": 186
+    }
+  },
+  "seg/brain/test": {
+    "images": 240,
+    "instances": 240,
+    "sizes": [
+      "1024x768",
+      "1388x1040"
+    ],
+    "conversions": {
+      "rgb": 120,
+      "gray": 117,
+      "rgb_identical->gray": 3
+    }
+  },
+  "seg/colon/train": {
+    "images": 15,
+    "instances": 1487,
+    "sizes": [
+      "1600x1200"
+    ],
+    "conversions": {
+      "rgb": 15
+    }
+  },
+  "seg/colon/val": {
+    "images": 5,
+    "instances": 0,
+    "sizes": [
+      "1600x1200"
+    ],
+    "conversions": {
+      "rgb": 3,
+      "gray": 2
+    }
+  },
+  "seg/colon/test": {
+    "images": 10,
+    "instances": 750,
+    "sizes": [
+      "1600x1200"
+    ],
+    "conversions": {
+      "rgb": 10
+    }
+  },
+  "det/intestine/test": {
+    "images": 423,
+    "instances": 8443,
+    "sizes": [
+      "1024x1024",
+      "1280x960",
+      "2048x2048",
+      "300x300",
+      "450x450",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 120,
+      "rgb_identical->gray": 249,
+      "rgb": 54
+    }
+  },
+  "det/intestine/val": {
+    "images": 421,
+    "instances": 7631,
+    "sizes": [
+      "1024x1024",
+      "1280x960",
+      "2048x2048",
+      "300x300",
+      "450x450",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 101,
+      "rgb_identical->gray": 265,
+      "rgb": 55
+    }
+  },
+  "det/intestine/train": {
+    "images": 1969,
+    "instances": 36914,
+    "sizes": [
+      "1024x1024",
+      "1280x960",
+      "2048x2048",
+      "300x300",
+      "450x450",
+      "512x512"
+    ],
+    "conversions": {
+      "gray": 489,
+      "rgb_identical->gray": 1239,
+      "rgb": 241
+    }
+  },
+  "det/brain/train": {
+    "images": 1299,
+    "instances": 1299,
+    "sizes": [
+      "1024x768",
+      "1388x1040"
+    ],
+    "conversions": {
+      "rgb": 829,
+      "rgb_identical->gray": 10,
+      "gray": 460
+    }
+  },
+  "det/brain/test": {
+    "images": 280,
+    "instances": 280,
+    "sizes": [
+      "1024x768",
+      "1388x1040"
+    ],
+    "conversions": {
+      "rgb": 159,
+      "rgb_identical->gray": 3,
+      "gray": 118
+    }
+  },
+  "det/brain/val": {
+    "images": 278,
+    "instances": 278,
+    "sizes": [
+      "1024x768",
+      "1388x1040"
+    ],
+    "conversions": {
+      "rgb": 165,
+      "gray": 110,
+      "rgb_identical->gray": 3
+    }
+  },
+  "det/lung/train": {
+    "images": 2804,
+    "instances": 51217,
+    "sizes": [
+      "1224x904"
+    ],
+    "conversions": {
+      "rgb_identical->gray": 2802,
+      "gray": 2
+    }
+  },
+  "det/lung/test": {
+    "images": 602,
+    "instances": 10702,
+    "sizes": [
+      "1224x904"
+    ],
+    "conversions": {
+      "rgb_identical->gray": 602
+    }
+  },
+  "det/lung/val": {
+    "images": 600,
+    "instances": 10903,
+    "sizes": [
+      "1224x904"
+    ],
+    "conversions": {
+      "rgb_identical->gray": 600
+    }
+  }
+}
