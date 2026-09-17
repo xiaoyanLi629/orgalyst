@@ -4,12 +4,12 @@
 
 **参赛类别：端到端系统（End-to-End System）**
 
-- **演示视频**: ≤ 5 分钟，公开：`<视频链接，待补>`
+- **演示视频**: 3 分 32 秒，公开、免登录：https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4（同时作为 Kaggle 附件上传）
 - **代码仓库**: https://github.com/xiaoyanLi629/orgalyst（公开、可复现，MIT）
 - **技术报告**: PDF：https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report.pdf（中文，正文 17 页 + 附录）· https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report_en.pdf（英文）；同目录有 HTML 版
 - **模型权重**: https://huggingface.co/XiaoyanLi/orgalyst-weights
 - **数据**: OrgLine（Zenodo 16355179，CC-BY-4.0）；未使用任何私有数据，未做额外标注
-- **团队**: Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）
+- **团队**: Orgalyst Lab：Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）
 
 ## 1 要解决的问题
 

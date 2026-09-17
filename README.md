@@ -1,6 +1,8 @@
 # Orgalyst — 类器官明场图像的对话式智能分析系统
 
-**AI4S Open Innovation: AI for Life Science（第五届琶洲算法大赛，AI + 器官芯片赛道）参赛作品 · 类别：端到端系统（End-to-End System）**
+**AI4S Open Innovation: AI for Life Science（第五届琶洲算法大赛，AI + 器官芯片赛道）参赛作品 · 类别：端到端系统（End-to-End System）· 队伍 Orgalyst Lab**
+
+演示视频（3 分 32 秒）：https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4
 
 Orgalyst = organoid + analyst。它把一条完整的类器官明场图像分析链路做成了两层：
 

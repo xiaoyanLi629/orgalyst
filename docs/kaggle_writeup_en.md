@@ -4,12 +4,12 @@
 
 **Category: End-to-End System**
 
-- **Demo video**: ≤ 5 min, public: `<video link, to be added>`
+- **Demo video**: 3 min 32 s, public, no login: https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4 (also uploaded as a Kaggle attachment)
 - **Code**: https://github.com/xiaoyanLi629/orgalyst (public, reproducible, MIT)
 - **Technical report**: PDF: https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report_en.pdf (English, 18 pages of main text plus appendix) · https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report.pdf (Chinese); HTML editions in the same folder
 - **Weights**: https://huggingface.co/XiaoyanLi/orgalyst-weights
 - **Data**: OrgLine (Zenodo 16355179, CC-BY-4.0); no private data, no additional annotation
-- **Team**: Xiaoyan Li (AI / computer vision / LLM applications, project lead); Liwen Xu and Xuzheng Fu (biology: organoid culture and morphological interpretation, responsible for requirements and review of results); Cuicui Jiang (AI: large language models, agent architecture and orchestration)
+- **Team**: Orgalyst Lab: Xiaoyan Li (AI / computer vision / LLM applications, project lead); Liwen Xu and Xuzheng Fu (biology: organoid culture and morphological interpretation, responsible for requirements and review of results); Cuicui Jiang (AI: large language models, agent architecture and orchestration)
 
 ## 1 The problem
 

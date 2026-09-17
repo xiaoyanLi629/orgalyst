@@ -107,7 +107,7 @@ ROW3 = (node("mach", "s", "n13", 14, "分析 · 检查", "质检员", f'<img id=
         node("mach", "m", "n17", 18, "输出", "报告生成器", '<div style="position:absolute;inset:6px 14%;background:#F6F8F7;border-radius:3px;padding:5px;display:flex;flex-direction:column;gap:3px" id="doc"></div>', "写报告 + 记录权重/参数/版本") + ar(15) +
         node("data", "l", "n18", 19, "最终结果", "报告 + 运行记录", f'<img src="{P["report_thumb"]}" style="object-fit:cover;object-position:top">', "report.html（双击可开）+ manifest.json（照片校验码、权重哈希、参数、版本），任何人可复现"))
 
-HTML = """<title>Orgalyst 平台演示</title>
+HTML = """<meta charset="utf-8"><title>Orgalyst 平台演示</title>
 <style>__CSS____EXTRA__</style>
 <div class="wrap">
 <nav class="toc" aria-label="目录"><div class="k">目录</div><a href="#flow">全景流程</a><a href="#diam">补充：量错大小会怎样</a><a href="#notes">阅读说明</a></nav>
