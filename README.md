@@ -83,7 +83,7 @@ orgalyst/        工具包：config（模型注册表 + 标定阈值）· segmen
 scripts/         数据准备、E1–E5 实验、权重/数据下载、演示页生成
 configs/         YOLO 数据配置
 results/         全部实验结果（json/csv）
-docs/            design.html 设计文档 · orgalyst_scene.html 全景流程动画 · technical_report.html / .pdf 技术报告 · assets/ 两页共用的素材
+docs/            design.html 设计文档 · orgalyst_scene.html 全景流程动画 · technical_report.html 技术报告（PDF 用浏览器打印 A4 即可） · assets/ 两页共用的素材
 e5/              Agent 任务集的参考值（数据由 scripts/e5_prepare.sh 从 OrgLine 抽取）
 agent/           对话式助手（BioAgent 精简副本：Claude Agent SDK + MCP + 权限门卫 + 网页版）；config.example.yaml 已指向本仓库的 orgalyst MCP
 weights/         不进 git，scripts/download_weights.sh 下载
