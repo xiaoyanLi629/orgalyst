@@ -53,10 +53,11 @@ figure{{margin:18px 0}}figure img{{width:100%;border:1px solid var(--rule);borde
 .meta{{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:14px 0}}.meta b{{color:var(--muted);font-weight:500}}
 h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:block}}main{{max-width:none}}body{{font-size:13.5px;line-height:1.65}}h2{{break-after:avoid}}figure,table{{break-inside:avoid}}figure img{{max-height:105mm;width:auto;max-width:100%;display:block;margin:0 auto}}.fig2 img,.fig3 img{{max-height:70mm}}}}
 .small{{font-size:13px;color:var(--muted)}}
+.appx img{{object-fit:contain;object-position:top;background:#fff}}@media print{{.appx img{{max-height:80mm!important}}}}
 </style></head><body>
 <div class="wrap">
 <nav class="toc" aria-label="目录"><div class="k">目录</div>
-<a href="#s1">1 摘要与类别声明</a><a href="#s2">2 问题与场景</a><a href="#s3">3 数据</a><a href="#s4">4 方法与系统</a><a href="#s5">5 作为分析助手</a><a href="#s6">6 实现细节</a><a href="#s7">7 实验与结果</a><a href="#s8">8 可靠性与局限</a><a href="#s9">9 影响与未来</a><a href="#s10">10 复现指南</a><a href="#s11">11 外部资源与许可</a></nav>
+<a href="#s1">1 摘要与类别声明</a><a href="#s2">2 问题与场景</a><a href="#s3">3 数据</a><a href="#s4">4 方法与系统</a><a href="#s5">5 作为分析助手</a><a href="#s6">6 实现细节</a><a href="#s7">7 实验与结果</a><a href="#s8">8 可靠性与局限</a><a href="#s9">9 影响与未来</a><a href="#s10">10 复现指南</a><a href="#s11">11 外部资源与许可</a><a href="#sA">附录 A 演示截图</a></nav>
 <main>
 <header class="hd">
 <div class="eyebrow">AI4S Open Innovation: AI for Life Science · 第五届琶洲算法大赛 · AI + 器官芯片 · 技术报告 · 2026-09-16</div>
@@ -181,7 +182,7 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <h2 id="s8">8 可靠性分析与局限</h2>
 <p><b>失败案例。</b>分割的两类典型失败都出现在脑类器官的极端尺度上：第 2 天直径只有约 80 像素的类器官在第一遍推理时会被培养基的纹理淹没，refine 的第二遍反而把背景团块当成目标放大了误差；第 30 天直径超过 600 像素的类器官偶尔被切成两半。pdac 的失败是系统性的：测试图的实例密度是训练图的七倍，来源仪器不同，模型漏掉了一半的小实例；这个问题需要更多同源训练数据或针对小实例的多尺度推理，我们没有在比赛期间解决。检测计数在粘连团块上会把两个数成一个，反过来在气泡和碎片上会多数。</p>
 <p><b>跨器官泛化边界。</b>第 7.1 节的留一实验给出了明确的边界：没有见过的器官，AP50 只有 0.15 到 0.47。因此系统对未注册的器官只提供"通用模型 + 明确的低精度提示"，不承诺精度。用户拿到新器官时应当用几十张标注图微调（结肠只用 15 张训练图就从 0.405 到 0.815）。</p>
-<p><b>大模型相关风险。</b>助手可能选错器官、编造像素尺寸、或者在结果不确定时给出过于肯定的措辞。我们的缓解是结构性的：所有数值来自工具，工具返回里带着单位与排除说明，系统提示禁止在未知像素尺寸时估算，权限门卫限制文件访问；E5 任务集就是对这些约束的回归测试。但 12 个任务不能覆盖真实使用里的提问方式，我们只在 Claude 一个后端上评测，开源模型后端的差距没有量化。此外助手依赖付费 API，评审复现 Agent 路径需要自己的密钥；命令行路径不受此限制，报告里的每个数字都可以由它复现。</p>
+<p><b>大模型相关风险。</b>助手可能选错器官、编造像素尺寸、或者在结果不确定时给出过于肯定的措辞。我们的缓解是结构性的：所有数值来自工具，工具返回里带着单位与排除说明，系统提示禁止在未知像素尺寸时估算，权限门卫限制文件访问；E5 任务集就是对这些约束的回归测试。但 12 个任务不能覆盖真实使用里的提问方式，我们只在 Claude 一个后端上评测，开源模型后端的差距没有量化。此外助手依赖付费 API，评审复现 Agent 路径需要自己的密钥；命令行路径不受此限制，报告里的每个数字都可以由它复现。准备附录 A 的演示时我们还观察到一个反例：在一组第 30 天脑类器官的组间比较里，脑模型漏掉了 TH2-7 组三张图中的两张（正是 E3 里漏检的那几张），助手把这个失败放在回答最前面如实说明，这是我们希望看到的；但它接着自己写了一段阈值分割代码“补救”出这两张图的面积并用于检验，这违反了 skill 里“不自己写分割代码”的约定。助手的诚实和越界在同一个回答里出现，说明只靠提示词约束是不够的，下一版需要在权限门卫里对“执行图像分割类代码”做硬性拦截，或让工具在失败时返回明确的“不可比较”状态。附录里的组间比较演示因此改用第 16 天的照片。</p>
 <p><b>数据局限。</b>只有脑数据集有像素标定，其余器官的形态学结果只能以像素为单位；OrgLine 的测试集在肠（12 张）和结肠（10 张）上很小，AP50 的置信区间很宽；数据集全部来自已发表的公开数据，没有器官芯片的时序数据，生长曲线实验只在脑类器官的静态培养上验证过。质控标记与真实错误的对应关系只在三种器官的测试集上做了初步评估（7.4 节），样本量有限。</p>
 
 <h2 id="s9">9 影响与未来工作</h2>
@@ -203,6 +204,9 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <tr><td>Claude Code</td><td>开发过程中的编程助手（代码、文档与实验脚本的撰写均经作者审核）</td><td>Anthropic</td></tr>
 </table></div>
 <p class="small">本项目代码以 MIT 许可发布；微调权重托管于 Hugging Face（XiaoyanLi/orgalyst-weights），继承各自基础模型的许可证。</p>
+<h2 id="sA">附录 A · 功能演示截图</h2>
+<p>以下截图均来自网页版的真实运行（bio01 账号，数据为 E5 任务集的测试图，界面为中文），每张是助手对该请求的最终回答，对应第 5.1 节表格里的问题类型。截图未经修饰，个别回答较长时只截取了主体部分。</p>
+<div class="fig2 appx"><figure><img src="{img(f'{A}/demo/count.jpg')}"><figcaption><b>图 A-1 · 只数数（检测）。</b>5 张肺类器官照片，只问每张有几个。助手调用检测计数工具，逐张列出数量并给出合计，说明用的是肺的标定阈值 0.40，不做分割。</figcaption></figure><figure><img src="{img(f'{A}/demo/um.jpg')}"><figcaption><b>图 A-2 · 带物理尺寸的分析。</b>3 张脑类器官照片，用户给了像素尺寸 3.1646 µm/px。助手把标定传给工具，面积与直径以微米报告。</figcaption></figure><figure><img src="{img(f'{A}/demo/repro.jpg')}"><figcaption><b>图 A-3 · 追问：可复现性。</b>在上一个对话里追问用了什么模型、直径策略，manifest.json 在哪。助手给出完整路径并说明其中记录的输入哈希、权重哈希、参数与版本。</figcaption></figure><figure><img src="{img(f'{A}/demo/qc.jpg')}"><figcaption><b>图 A-4 · 质控。</b>4 张肠类器官照片，要求标出不可靠的分割。助手开启质控，报告图像级指标和被标为低可信的实例数。</figcaption></figure><figure><img src="{img(f'{A}/demo/explain.jpg')}"><figcaption><b>图 A-5 · 追问：指标含义。</b>在质控对话里追问圆度怎么算、为什么排除贴边、低可信是什么意思。助手只解释定义与规则，不重新计算。</figcaption></figure><figure><img src="{img(f'{A}/demo/compare.jpg')}"><figcaption><b>图 A-6 · 组间比较。</b>6 张第 16 天脑类器官照片按 groups.csv 分成 wt2D 与 TH2-7 两组。助手做 Mann-Whitney 检验与 Cliff's delta，给出各组中位数，并指出每组 3 个样本时检验不可能显著、需要至少 4 个。</figcaption></figure><figure><img src="{img(f'{A}/demo/growth.jpg')}"><figcaption><b>图 A-7 · 生长曲线。</b>org01 从第 2 天到第 30 天的连续照片，元数据在 meta.csv。助手分析后连成生长曲线，报告首末时间点面积与倍数。</figcaption></figure><figure><img src="{img(f'{A}/demo/mixed.jpg')}"><figcaption><b>图 A-8 · 混合器官批次。</b>4 张照片里 2 张脑、2 张肠。助手拆成两批，各用对应器官的权重，分别报告数量与面积中位数。</figcaption></figure><figure><img src="{img(f'{A}/demo/unknown.jpg')}"><figcaption><b>图 A-9 · 器官未知。</b>3 张胰腺癌类器官照片，用户没说器官。助手按约定用通用模型并声明精度较低，或反问器官类型。</figcaption></figure><figure><img src="{img(f'{A}/demo/empty.jpg')}"><figcaption><b>图 A-10 · 空目录。</b>目录里没有图片。助手明确说明没有找到图片，而不是返回一个看起来正常的数字。</figcaption></figure></div>
 </main></div></body></html>"""
 # 正文里的直引号成对换成弯引号（标签内不动）
 import re as _re
