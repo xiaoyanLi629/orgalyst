@@ -51,9 +51,9 @@ figure{{margin:18px 0}}figure img{{width:100%;border:1px solid var(--rule);borde
 .fig2{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}.fig3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}}@media(max-width:640px){{.fig2,.fig3{{grid-template-columns:1fr}}}}
 .fig2 img,.fig3 img{{width:100%;border:1px solid var(--rule);border-radius:4px}}
 .meta{{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:14px 0}}.meta b{{color:var(--muted);font-weight:500}}
-h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:block}}main{{max-width:none}}body{{font-size:13.2px;line-height:1.6}}h2{{break-after:avoid}}figure,table{{break-inside:avoid}}figure img{{max-height:105mm;width:auto;max-width:100%;display:block;margin:0 auto}}.fig2 img,.fig3 img{{max-height:70mm}}}}
+h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:block}}main{{max-width:none}}body{{font-size:12.8px;line-height:1.52}}h2{{break-after:avoid}}figure,table{{break-inside:avoid}}figure img{{max-height:92mm;width:auto;max-width:100%;display:block;margin:0 auto}}.fig2 img,.fig3 img{{max-height:58mm}}}}
 .small{{font-size:13px;color:var(--muted)}}
-.appx img{{object-fit:contain;object-position:top;background:#fff}}@media print{{.appx{{grid-template-columns:1fr 1fr 1fr;gap:6px}}.appx img{{max-height:60mm!important}}.appx figcaption{{font-size:10.5px;line-height:1.35}}}}
+.appx img{{object-fit:contain;object-position:top;background:#fff}}@media print{{.appx{{grid-template-columns:1fr 1fr 1fr;gap:6px}}.appx img{{max-height:48mm!important}}.appx figcaption{{font-size:10.5px;line-height:1.35}}}}
 </style></head><body>
 <div class="wrap">
 <nav class="toc" aria-label="目录"><div class="k">目录</div>
@@ -133,6 +133,7 @@ h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:
 <p>这套流程的效果可以从两处看出来。一是助手的回答有固定的骨架：先说前提（器官、单位），再给结论和表，最后给路径和建议，7.5 节引用的回答就是这样的例子；二是它会主动说"不"：没有像素尺寸时不给微米数，通用模型的结果会注明精度较低，遇到离群的逐图计数会去看叠加图而不是照抄。这些行为写在 skill 和系统提示里，不依赖使用者会不会提问。</p>
 <h3>5.3 界面</h3>
 <figure><img src="{img(f'{A}/web_ui.jpg')}"><figcaption><b>图 5-1 · 网页版界面上的一次真实分析（bio01 账号，4 张肠类器官照片）。</b>中间是助手的回答：前提说明、逐图计数表、整体形态、产物路径与建议；右上角是本对话的确认方式（这里选了"自动允许"），右侧是助手自己维护的任务清单和本次对话的产物文件；底部状态栏显示上下文占用、今日与本月费用、已加载的工具模块。同一套后端也有终端版，供脚本化调用与评测（E5 就是这样跑的）。</figcaption></figure>
+<div class="fig2"><figure><img src="{img(f'{A}/ui/growth_top.jpg')}"><figcaption><b>图 5-2 · 一次生长曲线分析的开头。</b>助手先说思路，再建任务清单（右侧同步显示进度），随后每次工具调用在对话里留下一条“已自动允许”的记录；左侧是本账号的历史对话。</figcaption></figure><figure><img src="{img(f'{A}/ui/files_panel.jpg')}"><figcaption><b>图 5-3 · 本次对话的产物文件。</b>右侧面板列出这次对话生成的运行目录、表格和图，可在线预览、下载或打包；“我的数据”页签则是账号自己的上传区。</figcaption></figure><figure><img src="{img(f'{A}/ui/modules.jpg')}"><figcaption><b>图 5-4 · 工具模块面板。</b>Orgalyst 之外，助手还可按需加载 Biomni 的 22 组生物信息学工具（数据库查询、文献、分子生物学等），默认只加载三组以节省每轮开销。</figcaption></figure><figure><img src="{img(f'{A}/ui/settings.jpg')}"><figcaption><b>图 5-5 · 设置页。</b>模型选择、新对话的默认确认方式、按账号隔离的长期记忆（助手在会话结束时自动归纳，用户可编辑或清空）和改密码。</figcaption></figure></div>
 <h2 id="s6">6 实现细节</h2>
 <p>硬件为一台 AutoDL 云主机（NVIDIA RTX 5090 D，32 GB 显存；容器内存上限 62 GB），软件为 Python 3.10、torch 2.14.0+cu130、cellpose 3.1.1.3、ultralytics 8.4.152、numpy 2.0.2、scikit-image 0.25。分割微调：cyto3 初始化，按器官各训练 200 轮，学习率 0.1（Cellpose 默认 SGD），批大小 8，耗时脑 74 分钟、pdac 31 分钟、肠 22 分钟、结肠 1.4 分钟；跨器官实验每器官最多取 500 张训练图（四器官全量 2395 张会超出容器内存被静默杀掉，这是我们踩过的坑之一）。检测：yolo11m.pt 初始化，输入 1024，批 8，100 轮，单器官 32 到 65 分钟，联合模型 126 分钟。Cellpose-SAM 对照在独立的 cellpose 4 环境里跑，batch 2、学习率 1e-5、100 轮，pdac 96 分钟、肠 25 分钟。各阶段的实测耗时见表 6-1。</p>
 <div class="tw"><table><tr><th>阶段（单张图，中位数）</th>{timing_head}</tr>{timing_rows}</table></div>
