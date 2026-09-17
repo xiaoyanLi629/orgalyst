@@ -4,12 +4,13 @@
 
 **Category: End-to-End System**
 
-- **Demo video**: 3 min 32 s, public, no login: https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4 (also uploaded as a Kaggle attachment)
+- **Demo video**: 3 min 17 s (English narration), public, no login: https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4 (also uploaded as a Kaggle attachment); English narration: https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4
 - **Code**: https://github.com/xiaoyanLi629/orgalyst (public, reproducible, MIT)
 - **Technical report**: PDF: https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report_en.pdf (English, 18 pages of main text plus appendix) · https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report.pdf (Chinese); HTML editions in the same folder
+- **Live demo (optional)**: https://u598784-yymh-c3389f55.weste.seetacloud.com:8443/ account `judge`, password `orgalyst-judge-2026`. Runs on a single cloud GPU instance and may be offline outside the review period; sample data is on the server under /root/autodl-fs/AI4S/e5/data/ (small batches of intestine, brain, lung and pdac images, referenceable directly in the conversation), or upload your own bright-field images. Fallback: the demo video and the screenshots in Appendix A of the technical report.
 - **Weights**: https://huggingface.co/XiaoyanLi/orgalyst-weights
 - **Data**: OrgLine (Zenodo 16355179, CC-BY-4.0); no private data, no additional annotation
-- **Team**: Orgalyst Lab: Xiaoyan Li (AI / computer vision / LLM applications, project lead); Liwen Xu and Xuzheng Fu (biology: organoid culture and morphological interpretation, responsible for requirements and review of results); Cuicui Jiang (AI: large language models, agent architecture and orchestration); Rumei Yang
+- **Team**: Orgalyst Lab: Xiaoyan Li (AI / computer vision / LLM applications, project lead); Liwen Xu and Xuzheng Fu (biology: organoid culture and morphological interpretation, responsible for requirements and review of results); Cuicui Jiang (AI: large language models, agent architecture and orchestration); Rumei Yang (biology: organoid analysis). Team composition: two members from AI / computer science and three from biology, as required for the cross-disciplinary bonus
 
 ## 1 The problem
 
@@ -87,22 +88,22 @@ Three conclusions: zero-shot cyto3 recognises organoids but over-segments badly,
 
 ***Figure 4 · E3 scatter and Bland-Altman plots of automatic vs expert area.** Residual failures are the smallest day-2 organoids (4 over-estimated) and one of the largest day-30 ones.*
 
-**E5 end-to-end agent benchmark.** Twelve natural-language tasks, each with an automatically judged success criterion: numbers in the answer must lie within 5 to 10% of the command-line reference values, the agreed output files must exist, and key wording must be present. With the Claude (claude-opus-5) backend 12/12 tasks passed, at 113 s and 10.5 tool calls per task on average (1.5 of them Orgalyst tools), 5.63 USD in total.
+**E5 end-to-end agent benchmark.** The table is the full re-run after the skill and the code guard were added; the first run before either also passed 12/12 (113 s, 10.5 calls per task).  Twelve natural-language tasks, each with an automatically judged success criterion: numbers in the answer must lie within 5 to 10% of the command-line reference values, the agreed output files must exist, and key wording must be present. With the Claude (claude-opus-5) backend 12/12 tasks passed, at 99 s and 9.9 tool calls per task on average (1.9 of them Orgalyst tools), 4.51 USD in total.
 
 | Task | Content | Time (s) | Tool calls | of which Orgalyst | Verdict |
 |---|---|---|---|---|---|
-| t01 | single image: count and size | 44 | 2 | 1 | pass |
-| t02 | batch analysis with report | 64 | 3 | 1 | pass |
-| t08 | follow-up: metric definitions | 65 | 5 | 0 | pass |
-| t03 | analysis with pixel size | 49 | 2 | 1 | pass |
-| t10 | follow-up: reproducibility | 28 | 2 | 0 | pass |
-| t04 | count only (detection) | 40 | 1 | 1 | pass |
-| t05 | group comparison | 309 | 31 | 5 | pass |
-| t06 | growth curve | 458 | 46 | 3 | pass |
-| t07 | quality control | 154 | 18 | 1 | pass |
-| t09 | organ not specified | 62 | 3 | 2 | pass |
-| t11 | empty folder | 24 | 2 | 0 | pass |
-| t12 | mixed-organ batch | 65 | 11 | 3 | pass |
+| t01 | single image: count and size | 49 | 2 | 1 | pass |
+| t02 | batch analysis with report | 91 | 13 | 3 | pass |
+| t08 | follow-up: metric definitions | 21 | 1 | 0 | pass |
+| t03 | analysis with pixel size | 63 | 2 | 1 | pass |
+| t10 | follow-up: reproducibility | 29 | 2 | 0 | pass |
+| t04 | count only (detection) | 36 | 2 | 1 | pass |
+| t05 | group comparison | 258 | 27 | 6 | pass |
+| t06 | growth curve | 259 | 28 | 5 | pass |
+| t07 | quality control | 152 | 20 | 2 | pass |
+| t09 | organ not specified | 121 | 8 | 1 | pass |
+| t11 | empty folder | 30 | 1 | 0 | pass |
+| t12 | mixed-organ batch | 82 | 13 | 3 | pass |
 
 ## 4 Reproducibility
 
@@ -110,7 +111,7 @@ The repository offers two paths. The **command-line path** needs no language mod
 
 ## 5 Limitations
 
-Recall on pancreatic cancer organoids is only about one half and needs more in-domain data or multi-scale inference for small instances; only the brain dataset has a pixel calibration, so other organs are reported in pixels; the intestine (12) and colon (10) test sets are small and their AP50 confidence intervals wide; the agent path was evaluated on one backend and twelve tasks cannot cover every way real users phrase requests; all data come from published datasets and none from organ-on-a-chip time series. Section 8 of the technical report expands on each.
+Recall on pancreatic cancer organoids is only about one half and needs more in-domain data or multi-scale inference for small instances; only the brain dataset has a pixel calibration, so other organs are reported in pixels; the intestine (12) and colon (10) test sets are small and their AP50 confidence intervals wide; the agent path was evaluated on one backend and twelve tasks cannot cover every way real users phrase requests; the assistant once wrote its own segmentation code to "rescue" a failed tool call, which we have since blocked in the permission gatekeeper and re-validated with a full re-run; all data come from published datasets and none from organ-on-a-chip time series. Section 8 of the technical report expands on each.
 
 ## 6 Impact and next steps
 

@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-0E7A6C.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB.svg)](requirements.txt)
 [![Weights on Hugging Face](https://img.shields.io/badge/weights-Hugging%20Face-FFD21E.svg)](https://huggingface.co/XiaoyanLi/orgalyst-weights)
-[![Demo video](https://img.shields.io/badge/demo%20video-3%3A32-C0392B.svg)](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4)
+[![Demo video](https://img.shields.io/badge/demo%20video-3%3A17-C0392B.svg)](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4)
 [![Technical report](https://img.shields.io/badge/technical%20report-EN%20%7C%20中文-1B262C.svg)](docs/technical_report_en.pdf)
 [![Data: OrgLine CC-BY-4.0](https://img.shields.io/badge/data-OrgLine%20CC--BY--4.0-5A6A70.svg)](https://zenodo.org/records/16355179)
 
@@ -67,6 +67,10 @@ Everything was developed and evaluated on the public **OrgLine** dataset (eight 
 - **Assistant** — six MCP tools (`list_models`, `analyze_images`, `count_organoids`, `compare_groups`, `growth_curves`, `run_summary`), an `organoid-analysis` skill encoding the protocol (confirm organ / pixel size / goal → choose tools → verify → fixed report format; no micrometres without calibration, no recomputation in Python), a permission gatekeeper, per-account memory, spending limits, and an `ANTHROPIC_BASE_URL` path to open-model gateways.
 
 </details>
+
+## Try it live
+
+A judge account is open on our web instance: **https://u598784-yymh-c3389f55.weste.seetacloud.com:8443/** — account `judge`, password `orgalyst-judge-2026`. Sample images are on the server under `/root/autodl-fs/AI4S/e5/data/` (say, for example, *"analyse the 4 intestinal organoid images under /root/autodl-fs/AI4S/e5/data/intestine and generate a report"*), or upload your own bright-field images from the right-hand panel. The instance is a single cloud GPU and may be offline outside the review period; the [demo video](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) ([English narration](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4)) and Appendix A of the technical report are the fallback.
 
 ## Quick start
 
@@ -139,7 +143,7 @@ All numbers are on OrgLine test sets and reproduce from the scripts below; every
 - **Agreement with expert annotation** (brain, 240 images): Spearman 0.963, median relative error 1.9 %, 93 % of images within 10 %.
 - **Cross-organ generalisation is limited** (0.15–0.47 AP50 on unseen organs), which is why weights are organ-specific; fine-tuned **Cellpose-SAM** matches but does not beat fine-tuned cyto3 at 50× the weight size, so it is kept only as a comparison.
 - **QC flags are informative but not exhaustive**: flagged instances are 3.5–6.8× more likely to be wrong, recall 0.07–0.13 — a hint, not a filter.
-- **End-to-end agent benchmark**: 12 natural-language tasks judged automatically against command-line reference values — **12 / 12 passed**, 113 s and 10.5 tool calls per task on average (Claude backend).
+- **End-to-end agent benchmark**: 12 natural-language tasks judged automatically against command-line reference values — **12 / 12 passed**, 99 s and 9.9 tool calls per task on average (Claude backend, full re-run after the analysis skill and the code guard were added; the first run also passed 12 / 12).
 
 <p align="center"><img src="docs/assets/gallery_en.jpg" alt="Twelve unselected test images: segmentation on brain, intestine, pdac and colon, detection counting on lung" width="900"></p>
 
@@ -182,15 +186,15 @@ weights/      not in git — scripts/download_weights.sh
 | Kaggle writeup | [HTML](docs/kaggle_writeup_en.html) · [PDF](docs/kaggle_writeup_en.pdf) · [Markdown](docs/kaggle_writeup_en.md) | [HTML](docs/kaggle_writeup_zh.html) · [PDF](docs/kaggle_writeup_zh.pdf) · [Markdown](docs/kaggle_writeup_zh.md) |
 | Design document | — | [HTML](docs/design.html) |
 | Interactive pipeline animation | — | [HTML](docs/orgalyst_scene.html) |
-| Demo video (3:32, Chinese narration, bilingual captions) | [MP4](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) | |
+| Demo video (bilingual captions) | [English narration, 3:17](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4) | [中文配音，3:43](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) |
 
 ## Limitations, stated plainly
 
-Recall on pancreatic cancer organoids is about one half (dense small instances from a different instrument). Only the brain dataset has a pixel calibration, so other organs are reported in pixels. The intestine and colon test sets are small. The agent path was evaluated on one backend and, in two of the demonstrations, the assistant went beyond its protocol and re-measured images with its own code — reported as-is in the technical report, together with the fix we plan (a hard block in the permission gatekeeper). See section 8 of the report.
+Recall on pancreatic cancer organoids is about one half (dense small instances from a different instrument). Only the brain dataset has a pixel calibration, so other organs are reported in pixels. The intestine and colon test sets are small. The agent path was evaluated on one backend. In two early demonstrations the assistant went beyond its protocol and re-measured images with its own code; we added a hard block for segmentation code to the permission gatekeeper and re-ran the full benchmark — reported as-is in section 8 of the technical report.
 
 ## Team
 
-**Orgalyst Lab** — Xiaoyan Li (AI / computer vision / LLM applications, project lead) · Liwen Xu, Xuzheng Fu (biology: organoid culture and morphological interpretation) · Cuicui Jiang (AI: large language models, agent architecture and orchestration) · Rumei Yang.
+**Orgalyst Lab** — Xiaoyan Li (AI / computer vision / LLM applications, project lead) · Liwen Xu, Xuzheng Fu (biology: organoid culture and morphological interpretation) · Cuicui Jiang (AI: large language models, agent architecture and orchestration) · Rumei Yang (biology: organoid analysis). Two members from AI / computer science, three from biology.
 
 Claude Code was used as a coding assistant during development; all code, documents and experiments were reviewed by the authors.
 

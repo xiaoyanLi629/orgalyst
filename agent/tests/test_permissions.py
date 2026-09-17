@@ -232,3 +232,12 @@ def test_permission_modes():
     # 任何模式下硬性拒绝不变
     cb, asked, auto = _cb("auto")
     assert _run(cb, "Write", {"file_path": "/data/raw/x.txt", "content": ""}) == "PermissionResultDeny"
+
+
+def test_code_guard_denies_selfmade_segmentation(tmp_path):
+    from bioagent.permissions import decide, Deny, Allow
+    kw = dict(readonly_dirs=[], cwd=tmp_path)
+    assert isinstance(decide("Bash", {"command": "python -c 'from skimage.filters import threshold_otsu; threshold_otsu(img)'"}, **kw), Deny)
+    assert isinstance(decide("Write", {"file_path": str(tmp_path / "x.py"), "content": "from cellpose import models\nm = models.CellposeModel()"}, **kw), Deny)
+    assert isinstance(decide("Bash", {"command": "python -m orgalyst analyze --organ brain --images d --out runs"}, **kw), Allow)
+    assert isinstance(decide("Bash", {"command": "ls /data && cat tables/features.csv | head"}, **kw), Allow)

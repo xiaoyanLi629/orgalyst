@@ -178,6 +178,25 @@ def _touches_private(tool: str, tool_input: dict[str, Any], private_dirs: list[P
     return None
 
 
+# 自写图像分割/形态测量代码的特征：Orgalyst 已提供这些能力，助手绕过工具自己算会破坏可复现性（技术报告第 8 节记录的越界行为）。
+# 命中即 Deny（任何确认方式下都拒绝），提示改用 mcp__orgalyst__ 工具。
+CODE_GUARDS = [
+    ("图像阈值分割", r"threshold_(otsu|li|yen|triangle|local|sauvola|niblack)\b|cv2\.(threshold|adaptiveThreshold|findContours|connectedComponents\w*|watershed)|skimage\.segmentation|\bwatershed\(|\bfelzenszwalb\(|\bslic\("),
+    ("自行调用分割模型", r"from cellpose|import cellpose|models\.(Cellpose|CellposeModel)\(|\bYOLO\(|ultralytics"),
+    ("自行做实例测量", r"\bregionprops(_table)?\(|\blabel\(\s*\w*\s*>\s*|binary_fill_holes|remove_small_objects|\bmorphology\.(opening|closing|dilation|erosion)\("),
+]
+CODE_GUARD_TOOLS = {"Bash", "Write", "Edit", "NotebookEdit"}
+
+def _code_guard_hit(tool: str, tool_input: dict) -> str | None:
+    if tool not in CODE_GUARD_TOOLS and tool != REPL_TOOL:
+        return None
+    text = " ".join(str(v) for k, v in tool_input.items() if k in ("command", "content", "new_string", "new_source", "code"))
+    for label, pat in CODE_GUARDS:
+        if re.search(pat, text):
+            return label
+    return None
+
+
 def decide(
     tool: str,
     tool_input: dict[str, Any],
@@ -196,6 +215,11 @@ def decide(
     hit = _touches_private(tool, tool_input, private_dirs or [], cwd)
     if hit:
         return Deny(f"{hit} 属于其他使用者，禁止访问")
+
+    # 0.5) 自写分割/测量代码：硬拦截，改用 Orgalyst 工具
+    g = _code_guard_hit(tool, tool_input)
+    if g:
+        return Deny(f"检测到{g}代码。类器官的分割、计数与形态测量必须通过 mcp__orgalyst__ 工具完成（analyze_images / count_organoids），不要自己写分割代码；工具失败时如实报告失败，不要自行补救")
 
     if tool in READ_TOOLS:
         return Allow()
