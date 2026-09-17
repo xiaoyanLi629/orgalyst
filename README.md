@@ -1,4 +1,4 @@
-# Orgalyst — 类器官明场图像分析的对话式副驾驶
+# Orgalyst — 类器官明场图像的对话式智能分析系统
 
 **AI4S Open Innovation: AI for Life Science（第五届琶洲算法大赛，AI + 器官芯片赛道）参赛作品 · 类别：端到端系统（End-to-End System）**
 
@@ -11,7 +11,7 @@ Orgalyst = organoid + analyst。它把一条完整的类器官明场图像分析
 
 ## English summary
 
-Orgalyst is a conversational copilot for organoid bright-field image analysis. A deterministic toolkit (`orgalyst/`) performs organ-specific Cellpose segmentation (cyto3 fine-tuned per organ on OrgLine), YOLO11m counting with calibrated confidence thresholds, morphometry, QC (image-level metrics and flip/rotate test-time-augmentation agreement), group statistics, growth curves and single-file HTML reports with a full provenance manifest. An agent layer (`agent/`, Claude Agent SDK + MCP) lets a biologist drive the whole pipeline in natural language; every number still comes from the toolkit. Everything is reproducible from the command line without any LLM; the agent path is evaluated on a 12-task benchmark (E5). See `docs/` for the design document, the animated pipeline walkthrough and the technical report, and `results/` for every table in the technical report.
+Orgalyst is a conversational analysis system for organoid bright-field images. A deterministic toolkit (`orgalyst/`) performs organ-specific Cellpose segmentation (cyto3 fine-tuned per organ on OrgLine), YOLO11m counting with calibrated confidence thresholds, morphometry, QC (image-level metrics and flip/rotate test-time-augmentation agreement), group statistics, growth curves and single-file HTML reports with a full provenance manifest. An agent layer (`agent/`, Claude Agent SDK + MCP) lets a biologist drive the whole pipeline in natural language; every number still comes from the toolkit. Everything is reproducible from the command line without any LLM; the agent path is evaluated on a 12-task benchmark (E5). See `docs/` for the design document, the animated pipeline walkthrough and the technical report, and `results/` for every table in the technical report.
 
 ## 30 分钟上手
 
@@ -103,4 +103,4 @@ bash scripts/bioagent-web.sh                       # 网页版（多账号）
 
 ## 许可与引用
 
-代码 MIT；OrgLine 数据 CC-BY-4.0（不随仓库分发）；权重派生自 Cellpose（BSD-3）与 Ultralytics YOLO11（AGPL-3.0）。请引用 OrgLine 与 Cellpose 的原始论文；本项目：Xiaoyan Li et al., *Orgalyst: a conversational copilot for organoid bright-field image analysis*, AI4S Open Innovation 2026.
+代码 MIT；OrgLine 数据 CC-BY-4.0（不随仓库分发）；权重派生自 Cellpose（BSD-3）与 Ultralytics YOLO11（AGPL-3.0）。请引用 OrgLine 与 Cellpose 的原始论文；本项目：Xiaoyan Li et al., *Orgalyst: a conversational analysis system for organoid bright-field images*, AI4S Open Innovation 2026.
