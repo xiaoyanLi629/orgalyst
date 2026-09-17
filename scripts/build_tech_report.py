@@ -51,7 +51,7 @@ figure{{margin:18px 0}}figure img{{width:100%;border:1px solid var(--rule);borde
 .fig2{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}.fig3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}}@media(max-width:640px){{.fig2,.fig3{{grid-template-columns:1fr}}}}
 .fig2 img,.fig3 img{{width:100%;border:1px solid var(--rule);border-radius:4px}}
 .meta{{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:14px 0}}.meta b{{color:var(--muted);font-weight:500}}
-h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:block}}main{{max-width:none}}body{{font-size:14.5px;line-height:1.75}}h2{{break-after:avoid}}figure,table{{break-inside:avoid}}}}
+h2{{page-break-before:auto}}@media print{{nav.toc{{display:none}}.wrap{{display:block}}main{{max-width:none}}body{{font-size:13.5px;line-height:1.65}}h2{{break-after:avoid}}figure,table{{break-inside:avoid}}figure img{{max-height:105mm;width:auto;max-width:100%;display:block;margin:0 auto}}.fig2 img,.fig3 img{{max-height:70mm}}}}
 .small{{font-size:13px;color:var(--muted)}}
 </style></head><body>
 <div class="wrap">
