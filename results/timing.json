@@ -1,0 +1,42 @@
+{
+ "gpu": "NVIDIA GeForce RTX 5090 D",
+ "cases": {
+  "512px": {
+   "image": "20210727_11562_ckufm1p2h4vzp0y7jh0fyg2yo_img.png",
+   "n_instances": 51,
+   "segment_s": 0.29064980801194906,
+   "qc_tta4_s": 1.0552926138043404,
+   "image_qc_s": 0.05109055805951357,
+   "measure_s": 0.03398582339286804,
+   "overlay_s": 0.006211655214428902,
+   "count_yolo_s": 0.00957570318132639,
+   "gpu_peak_gb": 0.6578302383422852
+  },
+  "1024px": {
+   "image": "0002_2013089_ckmbvhhhx0000345zlx7mhq1y_img.png",
+   "n_instances": 67,
+   "segment_s": 0.7078541005030274,
+   "qc_tta4_s": 2.935668531805277,
+   "image_qc_s": 0.4031144743785262,
+   "measure_s": 0.056619713082909584,
+   "overlay_s": 0.023167082108557224,
+   "count_yolo_s": 0.009092397056519985,
+   "gpu_peak_gb": 0.7310185432434082
+  },
+  "2048px": {
+   "image": "20210727_11753_ckuf91aiz36dm0y9p2t9k5qoh_img.png",
+   "n_instances": 55,
+   "segment_s": 2.290627914480865,
+   "qc_tta4_s": 9.06788766849786,
+   "image_qc_s": 3.1364015135914087,
+   "measure_s": 0.10799512080848217,
+   "overlay_s": 0.08733956422656775,
+   "count_yolo_s": 0.013641830533742905,
+   "gpu_peak_gb": 0.7310190200805664
+  }
+ },
+ "cpu_segment_s": {
+  "size": "512px",
+  "seconds": 14.143169241026044
+ }
+}

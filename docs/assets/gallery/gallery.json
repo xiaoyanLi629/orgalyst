@@ -1,0 +1,168 @@
+[
+ {
+  "organ": "brain",
+  "image_id": "org01_wt2D_d02_LabA",
+  "file": "brain__org01_wt2D_d02_LabA.jpg",
+  "shape": [
+   768,
+   1024
+  ],
+  "n_pred": 1,
+  "n_gt": 1,
+  "ap50": 1.0,
+  "diam_mode": "refine",
+  "diameter_px": 304.4867988754777
+ },
+ {
+  "organ": "brain",
+  "image_id": "org17_TH2-7_d16_LabB",
+  "file": "brain__org17_TH2-7_d16_LabB.jpg",
+  "shape": [
+   1040,
+   1388
+  ],
+  "n_pred": 1,
+  "n_gt": 1,
+  "ap50": 1.0,
+  "diam_mode": "refine",
+  "diameter_px": 470.48675625397465
+ },
+ {
+  "organ": "brain",
+  "image_id": "org33_A1A-1_d30_LabA",
+  "file": "brain__org33_A1A-1_d30_LabA.jpg",
+  "shape": [
+   768,
+   1024
+  ],
+  "n_pred": 1,
+  "n_gt": 1,
+  "ap50": 1.0,
+  "diam_mode": "refine",
+  "diameter_px": 599.9020174653011
+ },
+ {
+  "organ": "intestine",
+  "image_id": "0002_2013089_ckmbvhhhx0000345zlx7mhq1y_img",
+  "file": "intestine__0002_2013089_ckmbvhhhx0000345zlx7mhq1y_img.jpg",
+  "shape": [
+   1024,
+   1024
+  ],
+  "n_pred": 67,
+  "n_gt": 70,
+  "ap50": 0.9295774698257446,
+  "diam_mode": "sizemodel",
+  "diameter_px": 32.839517267930155
+ },
+ {
+  "organ": "intestine",
+  "image_id": "0002_2423915_cknt06dr33pzv3b68t421bk27_img",
+  "file": "intestine__0002_2423915_cknt06dr33pzv3b68t421bk27_img.jpg",
+  "shape": [
+   1024,
+   1024
+  ],
+  "n_pred": 53,
+  "n_gt": 76,
+  "ap50": 0.612500011920929,
+  "diam_mode": "sizemodel",
+  "diameter_px": 32.00501702583501
+ },
+ {
+  "organ": "intestine",
+  "image_id": "0002_7071445_ckm384kvx8ib3345zzs8qewl4_img",
+  "file": "intestine__0002_7071445_ckm384kvx8ib3345zzs8qewl4_img.jpg",
+  "shape": [
+   1024,
+   1024
+  ],
+  "n_pred": 51,
+  "n_gt": 44,
+  "ap50": 0.8627451062202454,
+  "diam_mode": "sizemodel",
+  "diameter_px": 32.27243324562564
+ },
+ {
+  "organ": "pdac",
+  "image_id": "PDAC1",
+  "file": "pdac__PDAC1.jpg",
+  "shape": [
+   1528,
+   1672
+  ],
+  "n_pred": 224,
+  "n_gt": 192,
+  "ap50": 0.726141095161438,
+  "diam_mode": "sizemodel",
+  "diameter_px": 25.332049473868516
+ },
+ {
+  "organ": "pdac",
+  "image_id": "PDAC10",
+  "file": "pdac__PDAC10.jpg",
+  "shape": [
+   1022,
+   1024
+  ],
+  "n_pred": 93,
+  "n_gt": 84,
+  "ap50": 0.8061224222183228,
+  "diam_mode": "sizemodel",
+  "diameter_px": 34.252405510283914
+ },
+ {
+  "organ": "colon",
+  "image_id": "input_21",
+  "file": "colon__input_21.jpg",
+  "shape": [
+   1200,
+   1600
+  ],
+  "n_pred": 108,
+  "n_gt": 118,
+  "ap50": 0.765625,
+  "diam_mode": "model",
+  "diameter_px": 50.51630783081055
+ },
+ {
+  "organ": "colon",
+  "image_id": "input_22",
+  "file": "colon__input_22.jpg",
+  "shape": [
+   1200,
+   1600
+  ],
+  "n_pred": 102,
+  "n_gt": 107,
+  "ap50": 0.7863247990608215,
+  "diam_mode": "model",
+  "diameter_px": 50.51630783081055
+ },
+ {
+  "organ": "lung",
+  "image_id": "image_10001",
+  "file": "lung__image_10001.jpg",
+  "shape": [
+   904,
+   1224
+  ],
+  "n_pred": 19,
+  "n_gt": 18,
+  "conf": 0.4,
+  "task": "count"
+ },
+ {
+  "organ": "lung",
+  "image_id": "image_10008",
+  "file": "lung__image_10008.jpg",
+  "shape": [
+   904,
+   1224
+  ],
+  "n_pred": 16,
+  "n_gt": 16,
+  "conf": 0.4,
+  "task": "count"
+ }
+]

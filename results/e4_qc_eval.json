@@ -1,0 +1,38 @@
+{
+ "intestine": {
+  "n_instances": 923,
+  "n_low": 10,
+  "n_bad": 87,
+  "iou_mean_low": 0.3960079459075102,
+  "iou_mean_high": 0.7829568547777327,
+  "bad_rate_low": 0.6,
+  "bad_rate_high": 0.0887185104052574,
+  "flag_precision": 0.6,
+  "flag_recall": 0.06896551724137931,
+  "spearman": 0.2583707960460988
+ },
+ "colon": {
+  "n_instances": 709,
+  "n_low": 17,
+  "n_bad": 56,
+  "iou_mean_low": 0.47858385697558914,
+  "iou_mean_high": 0.8602565862797236,
+  "bad_rate_low": 0.4117647058823529,
+  "bad_rate_high": 0.0708092485549133,
+  "flag_precision": 0.4117647058823529,
+  "flag_recall": 0.125,
+  "spearman": 0.3505759718976717
+ },
+ "pdac": {
+  "n_instances": 5857,
+  "n_low": 148,
+  "n_bad": 876,
+  "iou_mean_low": 0.37284475843038134,
+  "iou_mean_high": 0.6948841642744825,
+  "bad_rate_low": 0.49324324324324326,
+  "bad_rate_high": 0.14065510597302505,
+  "flag_precision": 0.49324324324324326,
+  "flag_recall": 0.08333333333333333,
+  "spearman": 0.2898480491963363
+ }
+}
