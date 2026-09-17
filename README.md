@@ -1,108 +1,218 @@
-# Orgalyst — 类器官明场图像的对话式智能分析系统
+<div align="center">
 
-**AI4S Open Innovation: AI for Life Science（第五届琶洲算法大赛，AI + 器官芯片赛道）参赛作品 · 类别：端到端系统（End-to-End System）· 队伍 Orgalyst Lab**
+# Orgalyst
 
-演示视频（3 分 32 秒）：https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4
+**A conversational analysis system for organoid bright-field images**
 
-Orgalyst = organoid + analyst。它把一条完整的类器官明场图像分析链路做成了两层：
+*One sentence in, a reproducible report out — every number computed by a deterministic toolkit, explained by an assistant that knows the protocol.*
 
-- **`orgalyst` 工具包**（命令行，不需要任何大模型）：按器官加载专用的 Cellpose 分割权重 → 形态测量（面积、等效直径、周长、圆度、实心度、长宽比、贴边标记）→ 质控（图像级清晰度/光照/饱和，实例级翻转旋转一致性）→ 组间统计（Mann-Whitney / Kruskal、Cliff's delta、Holm 校正）→ 生长曲线 → 单文件 HTML 报告 + 可复现的运行清单（输入 md5、权重哈希、参数、软件版本）。另有一个 YOLO11m 检测模型只负责"数有几个"。
-- **对话式助手**（`agent/`，基于 Claude Agent SDK 的 BioAgent）：把工具包通过 MCP 暴露给大模型，实验人员用一句话提需求（"分析这批肠类器官照片，比较两组面积，给我一份报告"），助手负责选工具、选器官权重、传参数、解释结果；所有数字仍由工具包算出，助手不看图、不算数。
+[![License: MIT](https://img.shields.io/badge/license-MIT-0E7A6C.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB.svg)](requirements.txt)
+[![Weights on Hugging Face](https://img.shields.io/badge/weights-Hugging%20Face-FFD21E.svg)](https://huggingface.co/XiaoyanLi/orgalyst-weights)
+[![Demo video](https://img.shields.io/badge/demo%20video-3%3A32-C0392B.svg)](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4)
+[![Technical report](https://img.shields.io/badge/technical%20report-EN%20%7C%20中文-1B262C.svg)](docs/technical_report_en.pdf)
+[![Data: OrgLine CC-BY-4.0](https://img.shields.io/badge/data-OrgLine%20CC--BY--4.0-5A6A70.svg)](https://zenodo.org/records/16355179)
 
-全部实验在公开的 **OrgLine** 数据集（Zenodo 16355179，CC-BY-4.0，八个来源、五种器官）上完成，没有使用任何私有数据。
+AI4S Open Innovation: AI for Life Science · 5th Pazhou Algorithm Competition · AI + Organ-on-a-Chip
+**Category: End-to-End System** · Team **Orgalyst Lab**
 
-## English summary
+<img src="docs/assets/demo.gif" alt="A real session in the web interface: the user asks for an analysis of four intestinal organoid images, the assistant plans, calls the toolkit and reports" width="900">
 
-Orgalyst is a conversational analysis system for organoid bright-field images. A deterministic toolkit (`orgalyst/`) performs organ-specific Cellpose segmentation (cyto3 fine-tuned per organ on OrgLine), YOLO11m counting with calibrated confidence thresholds, morphometry, QC (image-level metrics and flip/rotate test-time-augmentation agreement), group statistics, growth curves and single-file HTML reports with a full provenance manifest. An agent layer (`agent/`, Claude Agent SDK + MCP) lets a biologist drive the whole pipeline in natural language; every number still comes from the toolkit. Everything is reproducible from the command line without any LLM; the agent path is evaluated on a 12-task benchmark (E5). See `docs/` for the design document, the animated pipeline walkthrough and the technical report (Chinese `technical_report.html`, English `technical_report_en.html`), and `results/` for every table in the technical report.
+</div>
 
-## 30 分钟上手
+---
+
+## Why
+
+Organoid and organ-on-a-chip experiments produce bright-field micrographs every day, and the questions are always the same: *how many, how big, has anything changed*. The algorithms exist — Cellpose, OrganoID, OrgaSegment segment organoids well — but a bench scientist still needs to install an environment, pick a model, tune a diameter parameter, then reinvent the measuring, statistics and reporting, and three months later nobody can say which model produced a given number.
+
+Orgalyst closes that gap with two layers:
+
+| Layer | What it is | What it guarantees |
+|---|---|---|
+| **`orgalyst` toolkit** | A plain Python package and CLI. Organ-specific Cellpose segmentation, YOLO counting with calibrated thresholds, morphometry, two-level QC, group statistics, growth curves, a single-file HTML report and a provenance manifest. | Needs **no language model**. Every run records input hashes, weight hashes, parameters and versions, so every number can be recomputed. |
+| **Conversational assistant** | A Claude Agent SDK assistant that reaches the toolkit through six MCP tools and follows a written analysis protocol (a *skill*). Terminal and multi-user web editions. | Understands the request, picks the organ weights, checks the results, reports in a fixed format — and **never computes a number itself**. |
+
+Everything was developed and evaluated on the public **OrgLine** dataset (eight sources, five organs, CC-BY-4.0). No private data, no extra annotation.
+
+## What it does
+
+<table>
+<tr><td width="50%"><img src="docs/assets/overview_board.png" alt="The complete journey of one intestinal organoid image through the system"></td>
+<td>
+
+**The journey of one image.** From the user's sentence to tool selection, size estimation, rescaling, tiling, a U-Net loaded with intestine-specific weights, flow and probability maps, tracking into 146 contours, then measurement, QC, statistics, and finally the report with its run record. The interactive version is [`docs/orgalyst_scene.html`](docs/orgalyst_scene.html).
+
+**Ask in plain language:**
+- *"How many organoids are in these images?"* → detector count per image
+- *"Analyse these intestinal organoids, size and shape"* → segmentation, morphometry, report
+- *"Pixel size is 3.16 µm"* → results in micrometres (never estimated when unknown)
+- *"Which segmentations are unreliable?"* → flip/rotate agreement flags
+- *"Is there a difference between control and treated?"* → Mann-Whitney, Cliff's delta, box plot
+- *"How much did it grow from day 2 to day 30?"* → growth curves per individual
+- *"Which model and parameters? How do I reproduce this?"* → the manifest
+
+</td></tr>
+</table>
+
+<details>
+<summary><b>Toolkit capabilities in detail</b></summary>
+
+- **Segmentation** — Cellpose 3 with **organ-specific weights** (cyto3 fine-tuned separately on brain, intestine, pancreatic cancer, colon) and a **per-organ diameter strategy** (`model` / `sizemodel` / two-pass `refine`), which fixes the scale failure that makes generalist Cellpose miss 400-px brain organoids entirely. Unknown organs fall back to the generalist model with an explicit low-accuracy notice.
+- **Counting** — one YOLO11m detector trained jointly on three organs; confidence thresholds calibrated per organ on the validation set (0.50 / 0.45 / 0.40) instead of the mAP-oriented default 0.25.
+- **Morphometry** — area, equivalent diameter, perimeter, circularity, solidity, aspect ratio, border flag; micrometre columns when a pixel size is given; border-touching instances excluded from summaries by default and counted.
+- **Quality control** — image-level sharpness / illumination / saturation; instance-level test-time-augmentation agreement (4 dihedral transforms) that flags unstable segmentations in orange.
+- **Statistics & growth** — Mann-Whitney / Kruskal-Wallis with Cliff's delta and Holm correction; growth curves over individuals, time points and groups with fold change.
+- **Provenance** — `manifest.json` with md5 of every input, model identifier and weight hash, all parameters, library versions, GPU and a step log; single-file `report.html` that opens with a double click.
+- **Assistant** — six MCP tools (`list_models`, `analyze_images`, `count_organoids`, `compare_groups`, `growth_curves`, `run_summary`), an `organoid-analysis` skill encoding the protocol (confirm organ / pixel size / goal → choose tools → verify → fixed report format; no micrometres without calibration, no recomputation in Python), a permission gatekeeper, per-account memory, spending limits, and an `ANTHROPIC_BASE_URL` path to open-model gateways.
+
+</details>
+
+## Quick start
 
 ```bash
 git clone https://github.com/xiaoyanLi629/orgalyst && cd orgalyst
-python -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt            # torch 请按自己的 CUDA 版本装（见 scripts/setup_env.sh）
-bash scripts/download_weights.sh           # 国内加 --mirror；约 200 MB，权重托管在 HF: XiaoyanLi/orgalyst-weights
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # install torch for your CUDA version first if needed (see scripts/setup_env.sh)
+bash scripts/download_weights.sh         # ~200 MB from Hugging Face; add --mirror in mainland China
 export CELLPOSE_LOCAL_MODELS_PATH=$PWD/weights/cellpose ORGALYST_ROOT=$PWD
 
-# 1) 分割 + 形态测量 + 报告（任意一批明场 png/tif）
+# 1) segmentation + morphometry + report for any folder of bright-field images
 python -m orgalyst analyze --organ intestine --images /path/to/images --out runs --name demo
 #    → runs/demo_<id>/{report.html, manifest.json, tables/features.csv, tables/summary.json, masks/, overlays/}
-# 2) 只数数（检测模型，阈值已按器官标定）
+
+# 2) counting only (detector, calibrated threshold)
 python -m orgalyst count --organ lung --images /path/to/images --out runs
-# 3) 带物理尺寸、质控、生长曲线
+
+# 3) physical units, QC and growth curves
 python -m orgalyst analyze --organ brain --images DIR --pixel-size 3.1646 --qc --meta meta.csv --out runs --name growth
 python -m orgalyst track --run runs/growth_<id> --meta meta.csv
 ```
 
-Docker：`docker build -t orgalyst . && docker run --gpus all -v /path/to/images:/data -v $PWD/runs:/runs -v $PWD/weights:/app/weights orgalyst analyze --organ intestine --images /data --out /runs`
+Organs: `brain` `intestine` `pdac` `colon` for segmentation, `intestine` `brain` `lung` for detection, `generic` when unknown.
+Docker: `docker build -t orgalyst . && docker run --gpus all -v /path/to/images:/data -v $PWD/runs:/runs -v $PWD/weights:/app/weights orgalyst analyze --organ intestine --images /data --out /runs`
 
-器官参数取 `brain / intestine / pdac / colon`（分割）与 `intestine / brain / lung`（检测）；不知道器官用 `generic`（零样本 cyto3 兜底，精度明显更低，报告里会标注）。
-
-## 复现报告里的全部数字
-
-```bash
-bash scripts/download_orgline.sh && bash scripts/extract_orgline.sh   # OrgLine 原始数据（约 25 GB）
-python scripts/prepare_data.py                                          # → data/processed（统一 8 位 PNG + uint16 实例掩码 + YOLO 标注 + manifest.csv）
-bash scripts/run_e1_zeroshot.sh; bash scripts/run_e1_finetune.sh        # E1 零样本 / 按器官微调（results/e1_*）
-bash scripts/run_e1_crossorgan2.sh                                      # E1 跨器官：联合 + 留一（results/e1_ft_all_*, e1_ft_loo_*）
-bash scripts/run_e2_det.sh; python scripts/calibrate_det_conf.py        # E2 检测 + 计数阈值标定（results/e2_*）
-python scripts/e3_consistency.py                                        # E3 与专家标注面积的一致性（results/e3_*）
-bash scripts/run_cpsam_ft.sh                                            # 对照：Cellpose-SAM 零样本与微调（需 scripts/setup_cellpose4.sh 的独立环境）
-bash scripts/e5_prepare.sh; python scripts/run_agent_tasks.py           # E5 Agent 任务集（需要 agent/ 与 API key）
-```
-
-每个脚本都把结果写成 `results/*.json|csv`，仓库里已经包含我们跑出的全部结果文件，报告里的每张表都能对应到其中一个文件。
-
-## 主要结果（test 集）
-
-**E1 分割（AP50）**
-
-| 器官 | cyto3 零样本 | 按器官微调 | 微调 + 逐图尺寸策略（系统默认） | 逐图真值直径（上限） |
-|---|---|---|---|---|
-| brain (240) | 0.005 | 0.925 | **0.967**（两遍推理 refine） | 0.975 |
-| intestine (12) | 0.544 | 0.773 | **0.812**（sizemodel） | 0.812 |
-| colon (10) | 0.405 | **0.815** | 0.814 | 0.800 |
-| pdac (20) | 0.419 | 0.564 | **0.591**（sizemodel） | 0.605 |
-
-四器官联合模型在给对尺度时与专用模型持平，但留一器官模型在没见过的器官上只有 0.15–0.47，所以系统按器官加载专用权重。Cellpose-SAM（cellpose 4）零样本与微调后都没有超过 cyto3 微调（pdac 0.557 / 0.591，intestine 0.780 / 0.795），且权重大 50 倍，只作对照。
-
-**E2 检测计数（YOLO11m，三器官联合模型，阈值在 val 上标定）**
-
-| 器官 | mAP50 | 标定阈值 | 计数 MAPE（默认 0.25 → 标定） | 中位 APE |
-|---|---|---|---|---|
-| intestine (423) | 0.948 | 0.50 | 0.262 → 0.207 | 0.13 |
-| brain (280) | 0.995 | 0.45 | 0.018 → 0.004 | 0.00 |
-| lung (602) | 0.936 | 0.40 | 0.235 → 0.168 | 0.11 |
-
-**E3 与专家标注的一致性（brain，240 图，面积）**：Spearman 0.963，中位相对误差 1.9%，≤10% 误差的图占 93%，漏检 3/240。
-
-**E5 Agent 任务集（12 个自然语言任务：单图 / 批量 / 物理尺寸 / 只数数 / 组间比较 / 生长曲线 / 质控 / 追问指标含义 / 追问可复现性 / 器官未知 / 空目录 / 混合器官；每个任务有对照命令行参考值与产物文件的自动判定，`scripts/run_agent_tasks.py`）**：Claude（claude-opus-5）后端 12/12 通过，平均每任务 10.5 次工具调用（其中 1.5 次是 Orgalyst 工具，其余是任务清单、读文件等），平均 113 s，12 个任务合计 5.6 美元；最慢的是组间比较（309 s）和生长曲线（458 s），因为助手在拿到结果后又自行核对了表格。逐任务记录在 `results/e5_agent_tasks_claude.json`。
-
-## 目录
-
-```
-orgalyst/        工具包：config（模型注册表 + 标定阈值）· segment · detect · morphometry · qc · compare · track · overlay · run · report · cli · mcp_server
-scripts/         数据准备、E1–E5 实验、权重/数据下载、演示页生成
-configs/         YOLO 数据配置
-results/         全部实验结果（json/csv）
-docs/            design.html 设计文档 · orgalyst_scene.html 全景流程动画 · technical_report.html 技术报告（中文）· technical_report_en.html（English）· PDF 用浏览器打印 A4 即可 · assets/ 两页共用的素材
-e5/              Agent 任务集的参考值（数据由 scripts/e5_prepare.sh 从 OrgLine 抽取）
-agent/           对话式助手（BioAgent 精简副本：Claude Agent SDK + MCP + 权限门卫 + 网页版）；config.example.yaml 已指向本仓库的 orgalyst MCP
-weights/         不进 git，scripts/download_weights.sh 下载
-```
-
-## 对话式助手怎么跑
+<details>
+<summary><b>Run the assistant</b></summary>
 
 ```bash
-cd agent && bash install.sh                       # 建 .venv，装 claude-agent-sdk 等
-cp config.example.yaml config.yaml                 # 按需改模型；Biomni 工具库默认关闭
-mkdir -p ~/.config/bioagent && echo "ANTHROPIC_API_KEY=sk-ant-..." > ~/.config/bioagent/.env
-./bioagent.sh --user demo                          # 终端版；输入 /auto auto 后即可一句话驱动整条链路
-bash scripts/bioagent-web.sh                       # 网页版（多账号）
+cd agent && bash install.sh                         # .venv with claude-agent-sdk, fastapi …
+cp config.example.yaml config.yaml                   # mcp_servers already points at ../orgalyst/mcp_server.py
+mkdir -p ~/.config/bioagent && printf 'ANTHROPIC_API_KEY=sk-ant-...\n' > ~/.config/bioagent/.env && chmod 600 ~/.config/bioagent/.env
+./bioagent.sh --user demo                            # terminal edition; type /auto auto to skip per-call confirmation
+bash scripts/bioagent-web.sh                         # web edition (multi-account)
 ```
 
-助手会调用 `mcp__orgalyst__` 前缀的六个工具：`list_models`、`analyze_images`、`count_organoids`、`compare_groups`、`growth_curves`、`run_summary` / `list_runs`。开源模型后端（LiteLLM → vLLM）见 `agent/README.md`。
+See [`agent/README.md`](agent/README.md) for the permission model, the skill and the open-model gateway path.
 
-## 许可与引用
+</details>
 
-代码 MIT；OrgLine 数据 CC-BY-4.0（不随仓库分发）；权重派生自 Cellpose（BSD-3）与 Ultralytics YOLO11（AGPL-3.0）。请引用 OrgLine 与 Cellpose 的原始论文；本项目：Xiaoyan Li et al., *Orgalyst: a conversational analysis system for organoid bright-field images*, AI4S Open Innovation 2026.
+## Results
+
+All numbers are on OrgLine test sets and reproduce from the scripts below; every table in the technical report maps to a file in [`results/`](results/).
+
+<table>
+<tr><td>
+
+**Segmentation, instance AP50**
+
+| Organ (test images) | cyto3 zero-shot | Fine-tuned + diameter strategy |
+|---|---:|---:|
+| brain (240) | 0.005 | **0.967** |
+| intestine (12) | 0.544 | **0.812** |
+| colon (10) | 0.405 | **0.815** |
+| pdac (20) | 0.419 | **0.591** |
+
+</td><td>
+
+**Counting by detection, joint YOLO11m**
+
+| Organ | mAP50 | Count MAPE 0.25 → calibrated |
+|---|---:|---:|
+| intestine | 0.948 | 0.262 → 0.207 |
+| brain | 0.995 | 0.018 → 0.004 |
+| lung | 0.936 | 0.235 → 0.168 |
+
+</td></tr>
+</table>
+
+- **Agreement with expert annotation** (brain, 240 images): Spearman 0.963, median relative error 1.9 %, 93 % of images within 10 %.
+- **Cross-organ generalisation is limited** (0.15–0.47 AP50 on unseen organs), which is why weights are organ-specific; fine-tuned **Cellpose-SAM** matches but does not beat fine-tuned cyto3 at 50× the weight size, so it is kept only as a comparison.
+- **QC flags are informative but not exhaustive**: flagged instances are 3.5–6.8× more likely to be wrong, recall 0.07–0.13 — a hint, not a filter.
+- **End-to-end agent benchmark**: 12 natural-language tasks judged automatically against command-line reference values — **12 / 12 passed**, 113 s and 10.5 tool calls per task on average (Claude backend).
+
+<p align="center"><img src="docs/assets/gallery_en.jpg" alt="Twelve unselected test images: segmentation on brain, intestine, pdac and colon, detection counting on lung" width="900"></p>
+
+<details>
+<summary><b>Reproduce every table</b></summary>
+
+```bash
+bash scripts/download_orgline.sh && bash scripts/extract_orgline.sh   # OrgLine raw data (~25 GB)
+python scripts/prepare_data.py                                          # → data/processed (8-bit PNG, uint16 masks, YOLO labels)
+bash scripts/run_e1_zeroshot.sh; bash scripts/run_e1_finetune.sh        # E1 zero-shot / per-organ fine-tuning
+bash scripts/run_e1_crossorgan2.sh                                      # E1 joint and leave-one-organ-out
+bash scripts/run_e2_det.sh; python scripts/calibrate_det_conf.py        # E2 detection + threshold calibration
+python scripts/e3_consistency.py                                        # E3 agreement with expert areas
+python scripts/e4_qc_eval.py; python scripts/bench_timing.py            # E4 QC evaluation, timing
+bash scripts/run_cpsam_ft.sh                                            # Cellpose-SAM comparison (separate env: scripts/setup_cellpose4.sh)
+bash scripts/e5_prepare.sh; python scripts/run_agent_tasks.py           # E5 agent benchmark (needs agent/ and an API key)
+```
+
+Expected wall time on one RTX 5090 D: data preparation 15 min, E1 fine-tuning 2.5 h, cross-organ 3 h, E2 4.5 h, E3 10 min, E5 25 min (≈ 6 USD of API usage).
+
+</details>
+
+## Repository layout
+
+```
+orgalyst/     toolkit — config (model registry, calibrated thresholds) · segment · detect · morphometry · qc · compare · track · overlay · run · report · cli · mcp_server
+scripts/      data preparation, experiments E1–E5, weight/data download, figure and document builders
+results/      every experiment result (json / csv) referenced by the report
+docs/         technical report (EN / 中文, HTML + PDF) · Kaggle writeup · design document · interactive pipeline animation · assets
+agent/        the assistant (Claude Agent SDK + MCP + permission gatekeeper + web UI) with the organoid-analysis skill; no accounts or secrets
+e5/           reference values for the agent benchmark (data drawn from OrgLine by scripts/e5_prepare.sh)
+weights/      not in git — scripts/download_weights.sh
+```
+
+## Documents
+
+| | English | 中文 |
+|---|---|---|
+| Technical report (20 pages + appendix) | [HTML](docs/technical_report_en.html) · [PDF](docs/technical_report_en.pdf) | [HTML](docs/technical_report.html) · [PDF](docs/technical_report.pdf) |
+| Kaggle writeup | [HTML](docs/kaggle_writeup_en.html) · [PDF](docs/kaggle_writeup_en.pdf) · [Markdown](docs/kaggle_writeup_en.md) | [HTML](docs/kaggle_writeup_zh.html) · [PDF](docs/kaggle_writeup_zh.pdf) · [Markdown](docs/kaggle_writeup_zh.md) |
+| Design document | — | [HTML](docs/design.html) |
+| Interactive pipeline animation | — | [HTML](docs/orgalyst_scene.html) |
+| Demo video (3:32, Chinese narration, bilingual captions) | [MP4](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) | |
+
+## Limitations, stated plainly
+
+Recall on pancreatic cancer organoids is about one half (dense small instances from a different instrument). Only the brain dataset has a pixel calibration, so other organs are reported in pixels. The intestine and colon test sets are small. The agent path was evaluated on one backend and, in two of the demonstrations, the assistant went beyond its protocol and re-measured images with its own code — reported as-is in the technical report, together with the fix we plan (a hard block in the permission gatekeeper). See section 8 of the report.
+
+## Team
+
+**Orgalyst Lab** — Xiaoyan Li (AI / computer vision / LLM applications, project lead) · Liwen Xu, Xuzheng Fu (biology: organoid culture and morphological interpretation) · Cuicui Jiang (AI: large language models, agent architecture and orchestration) · Rumei Yang.
+
+Claude Code was used as a coding assistant during development; all code, documents and experiments were reviewed by the authors.
+
+## Licence and citation
+
+Code: MIT. Data: OrgLine, CC-BY-4.0 (not redistributed; downloaded from Zenodo by script). Weights derive from Cellpose cyto3 (BSD-3) and Ultralytics YOLO11 (AGPL-3.0) and are hosted at [XiaoyanLi/orgalyst-weights](https://huggingface.co/XiaoyanLi/orgalyst-weights).
+
+```bibtex
+@misc{orgalyst2026,
+  title  = {Orgalyst: a conversational analysis system for organoid bright-field images},
+  author = {Li, Xiaoyan and Xu, Liwen and Fu, Xuzheng and Jiang, Cuicui and Yang, Rumei},
+  year   = {2026},
+  note   = {AI4S Open Innovation: AI for Life Science, 5th Pazhou Algorithm Competition},
+  url    = {https://github.com/xiaoyanLi629/orgalyst}
+}
+```
+
+<details>
+<summary><b>中文简介</b></summary>
+
+**Orgalyst：类器官明场图像的对话式智能分析系统。** 下层是一个不依赖大模型的工具包：按器官加载专用的 Cellpose 分割权重并选择直径策略，YOLO 检测计数（阈值按器官标定），形态测量，两级质控，组间统计，生长曲线，单文件 HTML 报告，以及记录输入哈希、权重哈希、参数与版本的运行清单。上层是基于 Claude Agent SDK 的对话式助手，通过六个 MCP 工具调用工具包，按写成 skill 的标准流程工作：确认器官、像素尺寸与目的，选工具，核对返回，固定格式汇报；没有像素尺寸时绝不给微米数字，所有数字都由工具算出。
+
+全部实验在公开的 OrgLine 数据集上完成。按器官微调后分割 AP50 在脑、肠、结肠上达到 0.967 / 0.812 / 0.815（零样本 0.005 / 0.544 / 0.405）；三器官联合 YOLO11m 检测 mAP50 0.936–0.995；脑类器官 240 张图的自动面积与专家标注 Spearman 0.963、中位相对误差 1.9%；12 个自然语言任务的端到端测试 12/12 通过。上手、复现与文档见上文，技术报告中文版在 `docs/technical_report.html`（PDF 同目录），Kaggle Writeup 中文版在 `docs/kaggle_writeup_zh.md`。
+
+</details>
