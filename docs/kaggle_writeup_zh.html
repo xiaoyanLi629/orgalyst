@@ -89,7 +89,7 @@ blockquote{border-left:3px solid var(--rule);margin:8px 0 14px;padding:6px 14px;
 <h1>Orgalyst：类器官明场图像的对话式智能分析系统</h1>
 <p class="sub">实验人员说一句话，几分钟后拿到一份能放进实验记录、三个月后仍能复核的分析报告；报告里的每个数字都能在没有大模型的环境下用命令行重新算出来。</p></header>
 <div class="decl">参赛类别：端到端系统（End-to-End System）</div>
-<div class="links"><b>演示视频</b><span>≤ 5 分钟，公开：<code>&lt;视频链接，待补&gt;</code></span><b>代码仓库</b><span>https://github.com/xiaoyanLi629/orgalyst（公开、可复现，MIT）</span><b>技术报告</b><span>仓库 docs/technical_report.html（中文，18 页）与 docs/technical_report_en.html（英文，19 页）</span><b>模型权重</b><span>https://huggingface.co/XiaoyanLi/orgalyst-weights</span><b>数据</b><span>OrgLine（Zenodo 16355179，CC-BY-4.0）；未使用任何私有数据，未做额外标注</span><b>团队</b><span>Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）</span></div>
+<div class="links"><b>演示视频</b><span>≤ 5 分钟，公开：<code>&lt;视频链接，待补&gt;</code></span><b>代码仓库</b><span>https://github.com/xiaoyanLi629/orgalyst（公开、可复现，MIT）</span><b>技术报告</b><span>PDF：https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report.pdf（中文，正文 17 页 + 附录）· https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report_en.pdf（英文）；同目录有 HTML 版</span><b>模型权重</b><span>https://huggingface.co/XiaoyanLi/orgalyst-weights</span><b>数据</b><span>OrgLine（Zenodo 16355179，CC-BY-4.0）；未使用任何私有数据，未做额外标注</span><b>团队</b><span>Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）</span></div>
 
 <h2>1 要解决的问题</h2>
 <p>类器官是用干细胞在三维环境里培养出的微型组织，器官芯片把这类组织放进微流控器件里模拟生理条件。无论哪一种，最便宜、最不伤细胞、频率最高的观察手段都是明场显微镜：每天或每隔几小时拍一张，看它们长得怎么样。这些照片的分析需求非常固定：数清楚一张图里有多少个类器官，量出每个的大小和形状，比较不同处理组之间有没有差异，把同一个类器官在不同时间点的测量连成生长曲线，最后写成能放进实验记录、能被别人复核的报告。</p>
