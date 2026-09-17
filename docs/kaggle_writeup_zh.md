@@ -9,7 +9,7 @@
 - **技术报告**: PDF：https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report.pdf（中文，正文 17 页 + 附录）· https://github.com/xiaoyanLi629/orgalyst/blob/main/docs/technical_report_en.pdf（英文）；同目录有 HTML 版
 - **模型权重**: https://huggingface.co/XiaoyanLi/orgalyst-weights
 - **数据**: OrgLine（Zenodo 16355179，CC-BY-4.0）；未使用任何私有数据，未做额外标注
-- **团队**: Orgalyst Lab：Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）
+- **团队**: Orgalyst Lab：Xiaoyan Li（AI / 计算机视觉 / 大模型应用，项目负责人）；许力文、付旭正（生物学，类器官培养与形态学判读，负责需求与结果审核）；姜翠翠（AI，大模型、Agent 架构与编排）；杨茹美
 
 ## 1 要解决的问题
 
