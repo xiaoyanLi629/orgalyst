@@ -11,7 +11,7 @@ Orgalyst = organoid + analyst。它把一条完整的类器官明场图像分析
 
 ## English summary
 
-Orgalyst is a conversational analysis system for organoid bright-field images. A deterministic toolkit (`orgalyst/`) performs organ-specific Cellpose segmentation (cyto3 fine-tuned per organ on OrgLine), YOLO11m counting with calibrated confidence thresholds, morphometry, QC (image-level metrics and flip/rotate test-time-augmentation agreement), group statistics, growth curves and single-file HTML reports with a full provenance manifest. An agent layer (`agent/`, Claude Agent SDK + MCP) lets a biologist drive the whole pipeline in natural language; every number still comes from the toolkit. Everything is reproducible from the command line without any LLM; the agent path is evaluated on a 12-task benchmark (E5). See `docs/` for the design document, the animated pipeline walkthrough and the technical report, and `results/` for every table in the technical report.
+Orgalyst is a conversational analysis system for organoid bright-field images. A deterministic toolkit (`orgalyst/`) performs organ-specific Cellpose segmentation (cyto3 fine-tuned per organ on OrgLine), YOLO11m counting with calibrated confidence thresholds, morphometry, QC (image-level metrics and flip/rotate test-time-augmentation agreement), group statistics, growth curves and single-file HTML reports with a full provenance manifest. An agent layer (`agent/`, Claude Agent SDK + MCP) lets a biologist drive the whole pipeline in natural language; every number still comes from the toolkit. Everything is reproducible from the command line without any LLM; the agent path is evaluated on a 12-task benchmark (E5). See `docs/` for the design document, the animated pipeline walkthrough and the technical report (Chinese `technical_report.html`, English `technical_report_en.html`), and `results/` for every table in the technical report.
 
 ## 30 分钟上手
 
@@ -83,7 +83,7 @@ orgalyst/        工具包：config（模型注册表 + 标定阈值）· segmen
 scripts/         数据准备、E1–E5 实验、权重/数据下载、演示页生成
 configs/         YOLO 数据配置
 results/         全部实验结果（json/csv）
-docs/            design.html 设计文档 · orgalyst_scene.html 全景流程动画 · technical_report.html 技术报告（PDF 用浏览器打印 A4 即可） · assets/ 两页共用的素材
+docs/            design.html 设计文档 · orgalyst_scene.html 全景流程动画 · technical_report.html 技术报告（中文）· technical_report_en.html（English）· PDF 用浏览器打印 A4 即可 · assets/ 两页共用的素材
 e5/              Agent 任务集的参考值（数据由 scripts/e5_prepare.sh 从 OrgLine 抽取）
 agent/           对话式助手（BioAgent 精简副本：Claude Agent SDK + MCP + 权限门卫 + 网页版）；config.example.yaml 已指向本仓库的 orgalyst MCP
 weights/         不进 git，scripts/download_weights.sh 下载
