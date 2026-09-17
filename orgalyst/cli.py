@@ -112,6 +112,9 @@ def cmd_track(a):
     g = growth_table(feats, meta, metric=a.metric); c = group_curves(g)
     g.to_csv(os.path.join(a.run, "tables", "growth.csv"), index=False); c.to_csv(os.path.join(a.run, "tables", "growth_curves.csv"), index=False)
     label = g["metric"].iloc[0]; img = plot_growth(g, c, label)
+    # 曲线图同时落盘为 figures/growth.png（此前只内嵌在 growth.html 里，工具返回的 outputs 里没有图片文件）
+    import base64 as _b64; os.makedirs(os.path.join(a.run, "figures"), exist_ok=True)
+    open(os.path.join(a.run, "figures", "growth.png"), "wb").write(_b64.b64decode(img.split(",", 1)[1]))
     H = [f"<title>生长曲线</title><style>{CSS}</style><main><div class='eyebrow'>Orgalyst · track</div><h1>生长曲线</h1>",
          f"<p class='sub'>指标 {label}；细线为每个个体，粗线为组均值；相对第一个时间点的倍数见 tables/growth.csv。</p><img src='{img}' style='max-width:100%'>",
          "<div class='tw'><table><tr><th>组</th><th class='n'>时间点</th><th class='n'>均值</th><th class='n'>中位数</th><th class='n'>标准差</th><th class='n'>n</th></tr>"]
