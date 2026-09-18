@@ -1,0 +1,37 @@
+[
+ {
+  "id": "a1",
+  "zh": "这是 Orgalyst 的系统架构图，用 archify 从代码仓库生成，每个节点都链接到 GitHub 上对应的源码。整张图分三层：上层是实验人员和对话式助手，中间是分析工具箱，底部是模型权重和运行目录。",
+  "en": "This is the Orgalyst architecture, generated with archify from the repository. Every node links to its source on GitHub. There are three layers: the scientist and the assistant on top, the analysis toolkit in the middle, and the model weights and run directory at the bottom.",
+  "dur": 18.26,
+  "dur_en": 16.87
+ },
+ {
+  "id": "a2",
+  "zh": "第一条路径是一次完整的分析。实验人员在网页或终端里提出问题，助手按分析技能规定的流程，通过 MCP 服务器调用工具箱：Cellpose 分割、形态计量与质检，最后生成一份单文件 HTML 报告。",
+  "en": "The first path is a complete analysis. A scientist asks a question in the web or terminal UI. The assistant follows the protocol fixed by the analysis skill and calls the toolkit through the MCP server: Cellpose segmentation, morphometry with quality control, and finally a single-file HTML report.",
+  "dur": 18.38,
+  "dur_en": 19.9
+ },
+ {
+  "id": "a3",
+  "zh": "第二条路径不需要任何大模型。orgalyst 命令行可以直接驱动分割器、检测器、统计和报告模块。全部权重都在公开的 OrgLine 数据上微调，每次运行的参数和产物都记录在运行目录的 manifest 里，任何数字都能复现。",
+  "en": "The second path needs no language model at all. The orgalyst command line drives the segmenter, the detector, the statistics and the report builder directly. All weights are fine-tuned on the public OrgLine data, and every run records its parameters and outputs in a manifest, so any number can be reproduced.",
+  "dur": 19.18,
+  "dur_en": 19.44
+ },
+ {
+  "id": "a4",
+  "zh": "第三条路径是安全护栏。分析技能把流程固定下来，权限闸门会拦下助手自己编写分割代码的企图，只允许它调用经过验证的 MCP 工具，所以结果永远来自同一套可复现的管线。",
+  "en": "The third path is the guardrails. The skill fixes the protocol, and the permission gate blocks any attempt by the assistant to write its own segmentation code. Only the validated MCP tools are allowed, so every result comes from the same reproducible pipeline.",
+  "dur": 16.54,
+  "dur_en": 16.63
+ },
+ {
+  "id": "a5",
+  "zh": "这张图本身是可交互的：点击任意节点可以看到它的上下游关系和源码链接，也可以切换深浅色主题，导出 PNG 或 SVG。图文件已随仓库一起发布在 docs 目录下。",
+  "en": "The diagram itself is interactive. Click any node to see its upstream and downstream relations and a link to the source. You can switch between light and dark themes and export PNG or SVG. The diagram ships with the repository in the docs folder.",
+  "dur": 15.72,
+  "dur_en": 17.11
+ }
+]

@@ -1,0 +1,565 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Orgalyst: conversational analysis system for organoid bright-field images",
+    "quality_profile": "showcase",
+    "locale": "en",
+    "viewBox": [
+      1240,
+      760
+    ],
+    "repository": {
+      "url": "https://github.com/xiaoyanLi629/orgalyst",
+      "provider": "github",
+      "revision": "1442f2bb5f879cddb31b620ff81d257085d72e85"
+    },
+    "views": [
+      {
+        "id": "one-sentence",
+        "label": "One sentence to report",
+        "focus": [
+          "scientist",
+          "webui",
+          "agent",
+          "mcp",
+          "segment",
+          "morph",
+          "report"
+        ],
+        "note": "Main path: a request enters through the web UI, the assistant calls the toolkit over MCP, a report with provenance comes back."
+      },
+      {
+        "id": "toolkit-only",
+        "label": "Toolkit without any LLM",
+        "focus": [
+          "cli",
+          "segment",
+          "detect",
+          "morph",
+          "stats",
+          "report",
+          "weights",
+          "manifest"
+        ],
+        "note": "Every number can be reproduced from the command line; the assistant layer is optional."
+      },
+      {
+        "id": "guardrails",
+        "label": "Guardrails",
+        "focus": [
+          "agent",
+          "gate",
+          "skill",
+          "mcp"
+        ],
+        "note": "The skill fixes the protocol; the gatekeeper refuses self-written segmentation code and any access to secrets."
+      }
+    ],
+    "animation": "trace"
+  },
+  "components": [
+    {
+      "id": "scientist",
+      "type": "external",
+      "label": "Bench scientist",
+      "sublabel": "one sentence",
+      "pos": [
+        40,
+        196
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "webui",
+      "type": "frontend",
+      "label": "Web / terminal UI",
+      "sublabel": "FastAPI + WebSocket",
+      "sources": [
+        {
+          "path": "agent/bioagent/web/app.py"
+        }
+      ],
+      "pos": [
+        240,
+        196
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "backend",
+      "label": "Assistant",
+      "sublabel": "Claude Agent SDK",
+      "brand": "claude",
+      "sources": [
+        {
+          "path": "agent/bioagent/agent.py"
+        }
+      ],
+      "pos": [
+        440,
+        196
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "skill",
+      "type": "security",
+      "label": "Analysis skill",
+      "sublabel": "confirm → tools → verify",
+      "sources": [
+        {
+          "path": "agent/skillpack/skills/organoid-analysis/SKILL.md"
+        }
+      ],
+      "pos": [
+        440,
+        66
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "gate",
+      "type": "security",
+      "label": "Permission gate",
+      "sublabel": "blocks secrets, DIY code",
+      "sources": [
+        {
+          "path": "agent/bioagent/permissions.py"
+        }
+      ],
+      "pos": [
+        440,
+        326
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "messagebus",
+      "label": "Orgalyst MCP server",
+      "sublabel": "6 tools over stdio",
+      "sources": [
+        {
+          "path": "orgalyst/mcp_server.py"
+        }
+      ],
+      "pos": [
+        640,
+        196
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "cli",
+      "type": "backend",
+      "label": "orgalyst CLI",
+      "sublabel": "analyze · count · track",
+      "sources": [
+        {
+          "path": "orgalyst/cli.py"
+        }
+      ],
+      "pos": [
+        640,
+        66
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "segment",
+      "type": "backend",
+      "label": "Segmenter",
+      "sublabel": "Cellpose, organ weights",
+      "sources": [
+        {
+          "path": "orgalyst/segment.py"
+        }
+      ],
+      "pos": [
+        840,
+        66
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "detect",
+      "type": "backend",
+      "label": "Detector",
+      "sublabel": "YOLO11m, calibrated",
+      "sources": [
+        {
+          "path": "orgalyst/detect.py"
+        }
+      ],
+      "pos": [
+        1040,
+        66
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "morph",
+      "type": "backend",
+      "label": "Morphometry + QC",
+      "sublabel": "regionprops, TTA",
+      "sources": [
+        {
+          "path": "orgalyst/morphometry.py"
+        },
+        {
+          "path": "orgalyst/qc.py"
+        }
+      ],
+      "pos": [
+        840,
+        196
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "stats",
+      "type": "backend",
+      "label": "Statistics + growth",
+      "sublabel": "Mann-Whitney, Cliff's δ",
+      "sources": [
+        {
+          "path": "orgalyst/compare.py"
+        },
+        {
+          "path": "orgalyst/track.py"
+        }
+      ],
+      "pos": [
+        840,
+        326
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "Report builder",
+      "sublabel": "single-file HTML",
+      "sources": [
+        {
+          "path": "orgalyst/report.py"
+        }
+      ],
+      "pos": [
+        840,
+        456
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "weights",
+      "type": "database",
+      "label": "Weights",
+      "sublabel": "Hugging Face hub",
+      "pos": [
+        1040,
+        326
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "manifest",
+      "type": "database",
+      "label": "Run directory",
+      "sublabel": "manifest, tables, masks",
+      "sources": [
+        {
+          "path": "orgalyst/run.py"
+        }
+      ],
+      "pos": [
+        640,
+        326
+      ],
+      "size": [
+        160,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Assistant layer (optional, needs an API key)",
+      "wraps": [
+        "webui",
+        "agent",
+        "skill",
+        "gate",
+        "mcp"
+      ],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "orgalyst toolkit (deterministic, no LLM)",
+      "wraps": [
+        "cli",
+        "segment",
+        "detect",
+        "morph",
+        "stats",
+        "report",
+        "manifest",
+        "weights"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "id": "scientist-webui",
+      "from": "scientist",
+      "to": "webui",
+      "label": "natural language",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        220.0,
+        190.0
+      ],
+      "variant": "emphasis"
+    },
+    {
+      "id": "webui-agent",
+      "from": "webui",
+      "to": "agent",
+      "label": "prompt",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        420.0,
+        192.0
+      ]
+    },
+    {
+      "id": "skill-agent",
+      "from": "skill",
+      "to": "agent",
+      "label": "protocol",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        633.6,
+        163.0
+      ],
+      "variant": "dashed"
+    },
+    {
+      "id": "gate-agent",
+      "from": "gate",
+      "to": "agent",
+      "label": "allow / deny",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        646.4,
+        293.0
+      ],
+      "variant": "security"
+    },
+    {
+      "id": "agent-mcp",
+      "from": "agent",
+      "to": "mcp",
+      "label": "tool calls",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        620,
+        192
+      ],
+      "variant": "emphasis"
+    },
+    {
+      "id": "mcp-cli",
+      "from": "mcp",
+      "to": "cli",
+      "label": "same code path",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        852.8,
+        163.0
+      ]
+    },
+    {
+      "id": "cli-segment",
+      "from": "cli",
+      "to": "segment",
+      "label": "analyze",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelAt": [
+        820.0,
+        102.0
+      ]
+    },
+    {
+      "id": "cli-detect",
+      "from": "cli",
+      "to": "detect",
+      "label": "count",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          720.0,
+          36
+        ],
+        [
+          1120.0,
+          36
+        ]
+      ],
+      "labelAt": [
+        920.0,
+        22
+      ]
+    },
+    {
+      "id": "segment-morph",
+      "from": "segment",
+      "to": "morph",
+      "label": "masks",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1024.0,
+        163.0
+      ]
+    },
+    {
+      "id": "morph-stats",
+      "from": "morph",
+      "to": "stats",
+      "label": "features",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1033.6,
+        293.0
+      ]
+    },
+    {
+      "id": "stats-report",
+      "from": "stats",
+      "to": "report",
+      "label": "tables",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelAt": [
+        1027.2,
+        423.0
+      ]
+    },
+    {
+      "id": "weights-detect",
+      "from": "weights",
+      "to": "detect",
+      "label": "weights",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        1160.4,
+        228.0
+      ],
+      "variant": "dashed"
+    },
+    {
+      "id": "report-manifest",
+      "from": "report",
+      "to": "manifest",
+      "label": "report + provenance",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [
+        [
+          720.0,
+          488.0
+        ]
+      ],
+      "labelAt": [
+        786.0,
+        474.0
+      ]
+    },
+    {
+      "id": "manifest-mcp",
+      "from": "manifest",
+      "to": "mcp",
+      "label": "run_dir",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        830.4,
+        293.0
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Two layers, one truth",
+      "items": [
+        "The assistant chooses tools and explains",
+        "Every number is computed by the toolkit"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Reproducible by design",
+      "items": [
+        "manifest.json records input md5, weight hash, parameters, versions",
+        "CLI path needs no language model"
+      ]
+    }
+  ]
+}

@@ -68,6 +68,12 @@ Everything was developed and evaluated on the public **OrgLine** dataset (eight 
 
 </details>
 
+## Architecture
+
+<img src="docs/assets/architecture.gif" alt="Guided walk through the Orgalyst architecture diagram: the main path from the scientist's sentence to the report, then the guardrails around the assistant" width="900">
+
+The diagram is generated from this repository with [archify](https://github.com/tt-a1i/archify): every node carries a verified link to its source file at a pinned commit, and the three guided views walk through the main analysis path, the toolkit-only path that needs no language model, and the guardrails that keep the assistant on the validated pipeline. Open [`docs/orgalyst.architecture.html`](docs/orgalyst.architecture.html) for the interactive version (focus, upstream/downstream reach, light/dark theme, PNG/SVG export); the authored source is [`docs/orgalyst.architecture.json`](docs/orgalyst.architecture.json). A narrated walkthrough of the same diagram is available in [English (1:38)](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_architecture_en.mp4) and [中文 (1:36)](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_architecture_zh.mp4).
+
 ## Try it live
 
 A judge account is open on our web instance: **https://u598784-yymh-c3389f55.weste.seetacloud.com:8443/** — account `judge`, password `orgalyst-judge-2026`. Sample images are on the server under `/root/autodl-fs/AI4S/e5/data/` (say, for example, *"analyse the 4 intestinal organoid images under /root/autodl-fs/AI4S/e5/data/intestine and generate a report"*), or upload your own bright-field images from the right-hand panel. The instance is a single cloud GPU and may be offline outside the review period; the [demo video](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) ([English narration](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4)) and Appendix A of the technical report are the fallback.
@@ -172,7 +178,7 @@ Expected wall time on one RTX 5090 D: data preparation 15 min, E1 fine-tuning 2.
 orgalyst/     toolkit — config (model registry, calibrated thresholds) · segment · detect · morphometry · qc · compare · track · overlay · run · report · cli · mcp_server
 scripts/      data preparation, experiments E1–E5, weight/data download, figure and document builders
 results/      every experiment result (json / csv) referenced by the report
-docs/         technical report (EN / 中文, HTML + PDF) · Kaggle writeup · design document · interactive pipeline animation · assets
+docs/         technical report (EN / 中文, HTML + PDF) · Kaggle writeup · design document · interactive pipeline animation · architecture diagram (archify) · assets
 agent/        the assistant (Claude Agent SDK + MCP + permission gatekeeper + web UI) with the organoid-analysis skill; no accounts or secrets
 e5/           reference values for the agent benchmark (data drawn from OrgLine by scripts/e5_prepare.sh)
 weights/      not in git — scripts/download_weights.sh
@@ -186,6 +192,8 @@ weights/      not in git — scripts/download_weights.sh
 | Kaggle writeup | [HTML](docs/kaggle_writeup_en.html) · [PDF](docs/kaggle_writeup_en.pdf) · [Markdown](docs/kaggle_writeup_en.md) | [HTML](docs/kaggle_writeup_zh.html) · [PDF](docs/kaggle_writeup_zh.pdf) · [Markdown](docs/kaggle_writeup_zh.md) |
 | Design document | — | [HTML](docs/design.html) |
 | Interactive pipeline animation | — | [HTML](docs/orgalyst_scene.html) |
+| Architecture diagram (interactive, generated with archify) | [HTML](docs/orgalyst.architecture.html) · [JSON source](docs/orgalyst.architecture.json) | — |
+| Architecture walkthrough video (1:38 / 1:36) | [English narration](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_architecture_en.mp4) | [中文配音](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_architecture_zh.mp4) |
 | Demo video (bilingual captions) | [English narration, 3:17](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo_en.mp4) | [中文配音，3:43](https://huggingface.co/XiaoyanLi/orgalyst-weights/resolve/main/demo/orgalyst_demo.mp4) |
 
 ## Limitations, stated plainly
